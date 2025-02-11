@@ -1,0 +1,11 @@
+[project]
+name = "speechrecognitionproject"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "better-profanity>=0.7.0",
+    "rich>=13.9.4",
+    "speechrecognition>=3.14.1",
+]
