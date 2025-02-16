@@ -28,7 +28,7 @@ class CallProcessor:
         }
         self.sensitive_words = ["password", "atm pin", "credit card","pin","atm"]
 
-        #defining categories with association keywords
+        # Defining categories with association keywords
         self.categories = {
             "Billing Issues": ["billing","invoice","charge","payment","refund","overcharge","undercharge","statement","fee","transaction","subscription","dues","penalty","late fee","dispute","incorrect charge","unbilled","outstanding balance","due date","autopay","failed payment","processing fee","chargeback","cancellation fee","hidden fees","credit","debit","account balance","payment declined","receipt","service charge","bill", "charge","exchange","discount"],
             "Technical Support": ["troubleshoot","error message","not working","unable to connect","crash","bug","fix issue","resolve problem","support ticket","customer support","it support","help desk","diagnose","configuration issue","compatibility issue","server down","network issue","latency","slow performance","software update","firmware update","patch","malfunction","system failure","blue screen","restart required","connection lost","authentication failed","access denied","data recovery","password reset","account locked","security breach","firewall issue","proxy error","hardware failure","device not recognized","driver update","installation failed","setup issue","runtime error"],
@@ -73,7 +73,7 @@ class CallProcessor:
                 print(f"- {phrase}")
             return True
 
-    def Categorize(self,transcribed_text):
+    def Categorize(self, transcribed_text):
         detected_categories = {}
 
         for category, keywords in self.categories.items():
@@ -95,7 +95,6 @@ class CallProcessor:
         else:
             print("Call Category: Unknown")
             return cat
-
 
     def check_profanity(self, text):
         """
@@ -128,7 +127,31 @@ class CallProcessor:
                 detected = True
 
         return detected, masked_text
-    
+
+    def sentiment_analysis(self, text):
+        """
+        Perform sentiment analysis on the transcribed text.
+        Returns polarity and subjectivity scores.
+        """
+        # Analyze sentiment using TextBlob
+        blob = TextBlob(text)
+        polarity = blob.sentiment.polarity  # Range: [-1, 1], where -1 is negative, 1 is positive
+        subjectivity = blob.sentiment.subjectivity  # Range: [0, 1], where 0 is objective, 1 is subjective
+
+        # Print results
+        print("\nSentiment Analysis Results:")
+        print(f"- Polarity: {polarity:.2f} (Negative to Positive)")
+        print(f"- Subjectivity: {subjectivity:.2f} (Objective to Subjective)")
+
+        # Interpret polarity
+        if polarity > 0:
+            print("  Overall Sentiment: Positive")
+        elif polarity < 0:
+            print("  Overall Sentiment: Negative")
+        else:
+            print("  Overall Sentiment: Neutral")
+
+        return polarity, subjectivity
 
     def speaker_diarization(self, audio_file):
         """
@@ -138,13 +161,13 @@ class CallProcessor:
         c) Time to first token (TTFT)
         """
         # Load the pre-trained speaker diarization pipeline
+        # Load the pre-trained speaker diarization pipeline
         token = os.getenv("HUGGING_FACE_TOKEN")
         if not token:
             raise ValueError("Hugging Face token not found in environment variables.")
 
         # Use the token in your code
         pipeline = Pipeline.from_pretrained("pyannote/speaker-diarization", use_auth_token=token)
-
 
         # Move pipeline to GPU if available
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -201,7 +224,6 @@ class CallProcessor:
 
         return diarization
 
-
     def process_call(self):
         """
         Calls the speech recognition, performs all checks, and prints results
@@ -236,5 +258,8 @@ class CallProcessor:
             audio_file = "/home/aditya/Downloads/ElonMuskShort.wav"  # Replace with the actual path to the audio file
             diarization = self.speaker_diarization(audio_file)
 
+
+# Example usage
 cp = CallProcessor()
+
 cp.process_call()
