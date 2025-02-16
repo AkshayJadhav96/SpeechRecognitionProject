@@ -1,4 +1,5 @@
 import speech_recognition as sr
+from pydub import AudioSegment
 from better_profanity import profanity
 from textblob import TextBlob
 from pyannote.audio import Pipeline
@@ -37,6 +38,7 @@ class CallProcessor:
             "Cancellation Requests": ["cancel subscription", "cancel order", "membership cancellation", "terminate account", "end service", "stop subscription", "discontinue plan", "request cancellation", "close account", "refund request", "cancellation policy", "early termination", "unsubscribe", "remove service", "void transaction", "delete account", "stop auto-renewal", "cancellation fee", "reverse charge", "withdraw request", "halt service", "stop payment", "cancel booking", "reschedule request", "terminate contract", "cease membership", "opt-out", "service discontinuation", "cancel trial", "deactivate service"],
             "Complaints": ["customer complaint", "file a complaint", "report issue", "bad experience", "poor service", "unsatisfactory response", "not happy", "frustrated", "disappointed", "service failure", "delayed response", "rude behavior", "unresolved issue", "poor quality", "defective product", "damaged item", "incorrect charge", "billing dispute", "refund problem", "scam", "fraud", "unauthorized transaction", "breach of policy", "misleading information", "false advertising", "late delivery", "missing item", "technical glitch", "login problem", "account hacked", "no response", "long wait time", "compensation request", "escalate issue"],
         }
+        self.speaker_segments = None
 
     def call_to_text(self):
         """
@@ -54,6 +56,55 @@ class CallProcessor:
             except:
                 print("Sorry, I did not get that")
                 return None
+   
+    def transcribe_audio_segment(self,audio_file_path, start_time, end_time):    
+        # Step 1: Load the audio file using pydub
+        audio = AudioSegment.from_file(audio_file_path)
+        
+        # Step 2: Extract the segment (convert start_time and end_time to milliseconds)
+        segment = audio[start_time * 1000:end_time * 1000]  # pydub works with milliseconds
+
+        # Step 3: Save the segment as a temporary WAV file
+        temp_wav_path = "temp_segment.wav"
+        segment.export(temp_wav_path, format="wav")
+        
+        # Step 4: Initialize the recognizer from SpeechRecognition
+        recognizer = sr.Recognizer()
+
+        # Step 5: Load the temporary WAV file into SpeechRecognition
+        with sr.AudioFile(temp_wav_path) as source:
+            audio_data = recognizer.record(source)  # Read the entire audio file
+            
+        # Step 6: Recognize speech using Google's Speech-to-Text (or any other recognizer)
+        try:
+            # Use Google's speech recognition (or any other supported engine)
+            transcription = recognizer.recognize_google(audio_data)
+            return transcription
+        except sr.UnknownValueError:
+            return "Google Speech Recognition could not understand the audio."
+        except sr.RequestError as e:
+            return f"Could not request results from Google Speech Recognition service; {e}"
+    
+    def calculate_speaking_speed(self,speaker_segments):
+        speaker_speech_data = {}
+
+        for seg in speaker_segments:
+            vg = self.transcribe_audio_segment(audio_path, seg[0],seg[1])
+            print(vg,seg)
+            if seg[-1] not in speaker_speech_data:
+                speaker_speech_data[seg[-1]] = [len(vg.split()),seg[1]-seg[0]]
+            else:
+                speaker_speech_data[seg[-1]][0] += len(vg.split())
+                speaker_speech_data[seg[-1]][1] += seg[1]-seg[0]
+        
+        # Calculate WPM (Words per Minute)
+        print(speaker_speech_data)
+        speeds = {}
+        for speaker in speaker_speech_data:
+            speeds[speaker] = speaker_speech_data[speaker][0]/(speaker_speech_data[speaker][1]*60)
+            print(f"speed of speaker {speaker} is {speeds[speaker]} wpm.")
+
+        return speeds
 
     def check_required_phrases(self, transcribed_text):
         """
@@ -162,6 +213,7 @@ class CallProcessor:
         """
         # Load the pre-trained speaker diarization pipeline
         # Load the pre-trained speaker diarization pipeline
+        
         token = os.getenv("HUGGING_FACE_TOKEN")
         if not token:
             raise ValueError("Hugging Face token not found in environment variables.")
@@ -186,6 +238,7 @@ class CallProcessor:
 
         # Sort segments by start time
         speaker_segments.sort()
+        self.speaker_segments = speaker_segments
 
         # Compute metrics
         total_time = {}
@@ -228,7 +281,8 @@ class CallProcessor:
         """
         Calls the speech recognition, performs all checks, and prints results
         """
-        transcribed_text = self.call_to_text()
+        # transcribed_text = self.call_to_text()
+        transcribed_text = "I am Akshay"
 
         if transcribed_text:
             # Check for required phrases
@@ -255,11 +309,14 @@ class CallProcessor:
             polarity, subjectivity = self.sentiment_analysis(masked_text)
 
             # Perform speaker diarization (requires an audio file)
-            audio_file = "/home/aditya/Downloads/ElonMuskShort.wav"  # Replace with the actual path to the audio file
+            audio_file = audio_path  # Replace with the actual path to the audio file
             diarization = self.speaker_diarization(audio_file)
+
+            print(self.calculate_speaking_speed(self.speaker_segments))
 
 
 # Example usage
+audio_path = "audio.mp3"
 cp = CallProcessor()
 
 cp.process_call()
