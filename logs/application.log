@@ -1,0 +1,67 @@
+2025-02-20 11:49:58 | INFO | speaker_diarization:diarize:14 - Starting speaker diarization for file: tinlin.mp3
+2025-02-20 11:50:07 | INFO | speaker_diarization:diarize:22 - Pipeline loaded and moved to cuda
+2025-02-20 11:50:21 | INFO | speaker_diarization:diarize:34 - Identified 5 speaker segments
+2025-02-20 11:50:21 | WARNING | speaker_diarization:diarize:62 - Only One Speaker Detected
+2025-02-20 11:50:21 | INFO | speaker_diarization:diarize:64 - Speaking ratio: N/A (only one speaker detected)
+2025-02-20 11:50:21 | INFO | speaker_diarization:diarize:65 - Interruptions count: 0
+2025-02-20 11:50:21 | INFO | speaker_diarization:diarize:66 - Time to first token: 0.03096875
+2025-02-20 11:50:21 | INFO | transcription:transcribe_audio_segment:12 - Starting transcription for file: tinlin.mp3
+2025-02-20 11:50:22 | INFO | transcription:transcribe_audio_segment:23 - Using full audio file for transcription.
+2025-02-20 11:50:22 | INFO | transcription:transcribe_audio_segment:28 - Temporary WAV file created: temp_segment.wav
+2025-02-20 11:50:27 | INFO | transcription:transcribe_audio_segment:35 - Temporary file deleted: temp_segment.wav
+2025-02-20 11:50:27 | INFO | transcription:transcribe_audio_segment:39 - Transcription successful:  Hello, refund the headphones, okay? Listen to you...
+2025-02-20 11:50:27 | INFO | pii_check:check_pii:22 - Starting PII detection.
+2025-02-20 11:50:27 | INFO | pii_check:check_pii:38 - No PII detected in the transcribed text.
+2025-02-20 11:50:27 | INFO | main:main:58 - PII check function done
+2025-02-20 11:50:27 | INFO | profanity_check:check_profanity:11 - Starting profanity check.
+2025-02-20 11:50:27 | WARNING | profanity_check:check_profanity:17 - Profanity detected in the text.
+2025-02-20 11:50:27 | INFO | main:main:69 - Profanity function done
+2025-02-20 11:50:27 | INFO | required_phrases:check_required_phrases:17 - Starting required phrases check.
+2025-02-20 11:50:27 | INFO | required_phrases:check_required_phrases:26 - Required phrases found: ['hello']
+2025-02-20 11:50:27 | INFO | main:main:79 - required phrase function done
+2025-02-20 11:50:27 | INFO | categorize_call:categorize:18 - Starting call categorization.
+2025-02-20 11:50:27 | INFO | categorize_call:categorize:27 - Detected category counts: {'Billing Issues': 1, 'Complaints': 1}
+2025-02-20 11:50:27 | INFO | categorize_call:categorize:36 - Categorized call as: Billing Issues
+2025-02-20 11:50:27 | INFO | main:main:89 - categorization fucntion done
+2025-02-20 11:50:27 | INFO | sentiment_analysis:analyse_sentiment:17 - Starting sentiment analysis.
+2025-02-20 11:50:27 | INFO | sentiment_analysis:analyse_sentiment:23 - Sentiment Analysis Results - Polarity: -0.03, Subjectivity: 0.48
+2025-02-20 11:50:27 | INFO | main:main:100 - sentiment analysis function done
+2025-02-20 11:50:27 | INFO | speaker_speed:calculate_speaking_speed:16 - Starting speaking speed calculation for file: tinlin.mp3
+2025-02-20 11:50:27 | INFO | speaker_speed:calculate_speaking_speed:24 - Processing segment for Speaker SPEAKER_00: 0.03096875s - 2.5115937500000003s
+2025-02-20 11:50:27 | INFO | transcription:transcribe_audio_segment:12 - Starting transcription for file: tinlin.mp3
+2025-02-20 11:50:27 | INFO | transcription:transcribe_audio_segment:20 - Extracted segment from 0.03096875s to 2.5115937500000003s
+2025-02-20 11:50:27 | INFO | transcription:transcribe_audio_segment:28 - Temporary WAV file created: temp_segment.wav
+2025-02-20 11:50:28 | INFO | transcription:transcribe_audio_segment:35 - Temporary file deleted: temp_segment.wav
+2025-02-20 11:50:28 | INFO | transcription:transcribe_audio_segment:39 - Transcription successful:  Hello, refund the headphones, okay?...
+2025-02-20 11:50:28 | INFO | speaker_speed:calculate_speaking_speed:33 - Speaker SPEAKER_00: 5 words spoken in 2.4806250000000003 seconds
+2025-02-20 11:50:28 | INFO | speaker_speed:calculate_speaking_speed:24 - Processing segment for Speaker SPEAKER_00: 4.334093750000001s - 12.079718750000001s
+2025-02-20 11:50:28 | INFO | transcription:transcribe_audio_segment:12 - Starting transcription for file: tinlin.mp3
+2025-02-20 11:50:29 | INFO | transcription:transcribe_audio_segment:20 - Extracted segment from 4.334093750000001s to 12.079718750000001s
+2025-02-20 11:50:29 | INFO | transcription:transcribe_audio_segment:28 - Temporary WAV file created: temp_segment.wav
+2025-02-20 11:50:30 | INFO | transcription:transcribe_audio_segment:35 - Temporary file deleted: temp_segment.wav
+2025-02-20 11:50:30 | INFO | transcription:transcribe_audio_segment:39 - Transcription successful:  Listen here buddy, my sister wants her stupid hea...
+2025-02-20 11:50:30 | INFO | speaker_speed:calculate_speaking_speed:33 - Speaker SPEAKER_00: 21 words spoken in 7.745625 seconds
+2025-02-20 11:50:30 | INFO | speaker_speed:calculate_speaking_speed:24 - Processing segment for Speaker SPEAKER_00: 13.379093750000003s - 20.550968750000003s
+2025-02-20 11:50:30 | INFO | transcription:transcribe_audio_segment:12 - Starting transcription for file: tinlin.mp3
+2025-02-20 11:50:31 | INFO | transcription:transcribe_audio_segment:20 - Extracted segment from 13.379093750000003s to 20.550968750000003s
+2025-02-20 11:50:31 | INFO | transcription:transcribe_audio_segment:28 - Temporary WAV file created: temp_segment.wav
+2025-02-20 11:50:32 | INFO | transcription:transcribe_audio_segment:35 - Temporary file deleted: temp_segment.wav
+2025-02-20 11:50:32 | INFO | transcription:transcribe_audio_segment:39 - Transcription successful:  Can you put the manager on please? Is this the ma...
+2025-02-20 11:50:32 | INFO | speaker_speed:calculate_speaking_speed:33 - Speaker SPEAKER_00: 19 words spoken in 7.171875 seconds
+2025-02-20 11:50:32 | INFO | speaker_speed:calculate_speaking_speed:24 - Processing segment for Speaker SPEAKER_00: 21.20909375s - 36.41346875s
+2025-02-20 11:50:32 | INFO | transcription:transcribe_audio_segment:12 - Starting transcription for file: tinlin.mp3
+2025-02-20 11:50:32 | INFO | transcription:transcribe_audio_segment:20 - Extracted segment from 21.20909375s to 36.41346875s
+2025-02-20 11:50:32 | INFO | transcription:transcribe_audio_segment:28 - Temporary WAV file created: temp_segment.wav
+2025-02-20 11:50:35 | INFO | transcription:transcribe_audio_segment:35 - Temporary file deleted: temp_segment.wav
+2025-02-20 11:50:35 | INFO | transcription:transcribe_audio_segment:39 - Transcription successful:  I have a guarantee it says you must give me a ref...
+2025-02-20 11:50:35 | INFO | speaker_speed:calculate_speaking_speed:33 - Speaker SPEAKER_00: 45 words spoken in 15.204374999999999 seconds
+2025-02-20 11:50:35 | INFO | speaker_speed:calculate_speaking_speed:24 - Processing segment for Speaker SPEAKER_00: 37.05471875s - 41.610968750000005s
+2025-02-20 11:50:35 | INFO | transcription:transcribe_audio_segment:12 - Starting transcription for file: tinlin.mp3
+2025-02-20 11:50:35 | INFO | transcription:transcribe_audio_segment:20 - Extracted segment from 37.05471875s to 41.610968750000005s
+2025-02-20 11:50:35 | INFO | transcription:transcribe_audio_segment:28 - Temporary WAV file created: temp_segment.wav
+2025-02-20 11:50:36 | INFO | transcription:transcribe_audio_segment:35 - Temporary file deleted: temp_segment.wav
+2025-02-20 11:50:36 | INFO | transcription:transcribe_audio_segment:39 - Transcription successful:  No, no, no! Reef on the headphones now!...
+2025-02-20 11:50:36 | INFO | speaker_speed:calculate_speaking_speed:33 - Speaker SPEAKER_00: 8 words spoken in 4.556250000000006 seconds
+2025-02-20 11:50:36 | INFO | speaker_speed:calculate_speaking_speed:51 - Calculated Speaking Speeds: {'SPEAKER_00': 158.23998385306285}
+2025-02-20 11:50:36 | INFO | main:main:117 - speed detection function done
+2025-02-20 13:42:43 | ERROR | main:main:127 - Error Occured
