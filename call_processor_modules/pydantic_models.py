@@ -56,13 +56,6 @@ class DiarizeOutput(BaseModel):
     interruptions: int
     time_to_first_token: float
 
-# Model for `calculate_speaking_speed`
-class CalculateSpeakingSpeedInput(BaseModel):
-    speaker_segments: List[SpeakerSegment]
-    audio_file: str
-
-class CalculateSpeakingSpeedOutput(BaseModel):
-    speaking_speeds: Dict[str, float]
 
 # Model for `transcribe_audio_segment`
 class TranscribeAudioSegmentInput(BaseModel):
@@ -72,3 +65,26 @@ class TranscribeAudioSegmentInput(BaseModel):
 
 class TranscribeAudioSegmentOutput(BaseModel):
     transcription: str
+
+# Model for 'get_speaker_speech_data'
+class GetSpeakerSpeechDataInput(BaseModel):
+    speaker_segments: List[SpeakerSegment]
+    audio_file: str
+
+class SpeechData(BaseModel):
+    length: int
+    time_period: float
+    speech: str
+
+class SpeakerSpeechData(BaseModel):
+    speaker_speech_data: Dict[str,SpeechData]
+
+# class GetSpeakerSpeechDataOutput(BaseModel):
+#     speaker_speech_data: SpeakerSpeechData
+
+# Model for `calculate_speaking_speed`
+# class CalculateSpeakingSpeedInput(BaseModel):
+#     speaker_speech_data: SpeakerSpeechData
+
+class CalculateSpeakingSpeedOutput(BaseModel):
+    speaking_speeds: Dict[str, float]
