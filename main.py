@@ -1,7 +1,7 @@
 from pathlib import Path
 from pydantic import ValidationError
 
-from call_processor_modules.pydantic_models import TranscribeAudioSegmentInput,TranscribeAudioSegmentOutput,AnalyseSentimentInput,AnalyseSentimentOutput,CalculateSpeakingSpeedInput,CalculateSpeakingSpeedOutput,CategorizeInput,CategorizeOutput,CheckPIIInput,CheckPIIOutput,CheckRequiredPhrasesInput,CheckRequiredPhrasesOutput,DiarizeInput,DiarizeOutput,CheckProfanityInput,CheckProfanityOutput
+from call_processor_modules.pydantic_models import TranscribeAudioSegmentInput,TranscribeAudioSegmentOutput,AnalyseSentimentInput,AnalyseSentimentOutput,CalculateSpeakingSpeedOutput,CategorizeInput,CategorizeOutput,CheckPIIInput,CheckPIIOutput,CheckRequiredPhrasesInput,CheckRequiredPhrasesOutput,DiarizeInput,DiarizeOutput,CheckProfanityInput,CheckProfanityOutput,GetSpeakerSpeechDataInput,SpeakerSpeechData,SpeechData
 
 from call_processor_modules.transcription import transcribe_audio_segment
 from call_processor_modules.profanity_check import check_profanity
@@ -11,6 +11,7 @@ from call_processor_modules.pii_check import check_pii
 from call_processor_modules.sentiment_analysis import analyse_sentiment
 from call_processor_modules.speaker_diarization import diarize
 from call_processor_modules.speaker_speed import calculate_speaking_speed
+from call_processor_modules.speaker import get_speaker_speech_data
 
 from logger_config import get_logger
 
@@ -33,14 +34,14 @@ def main():
         print("\nPerforming speaker diarization...")
         diarization_input = DiarizeInput(audio_file=audio_input.audio_file)
         diarization_results = diarize(diarization_input)
-        # logger.info("diarization function done")
+        logger.info("diarization function done")
         # print(diarization_results.interruptions)
 
         # Step 3: Transcribe the entire audio
         print("\nTranscribing the entire audio...")
         transcription_input = TranscribeAudioSegmentInput(audio_file=audio_input.audio_file)
         full_transcription = transcribe_audio_segment(transcription_input)
-        # logger.info("transcription function done")
+        logger.info("transcription function done")
 
         # print("\nFull transcription:")
         # print(full_transcription.transcription)
@@ -105,14 +106,13 @@ def main():
         # Step 9: Calculate speaking speed for each speaker
         print("\nCalculating speaking speed for each speaker...")
         if diarization_results:
-            speaking_speed_input = CalculateSpeakingSpeedInput(
-                speaker_segments = diarization_results.speaker_segments,
-                audio_file=audio_input.audio_file
-            )
-            speaking_speeds = calculate_speaking_speed(speaking_speed_input)
+            data = GetSpeakerSpeechDataInput(speaker_segments = diarization_results.speaker_segments,
+                audio_file=audio_input.audio_file)
+            speaker_speed_input = get_speaker_speech_data(data=data)
+            speaking_speeds = calculate_speaking_speed(speaker_speed_input).speaking_speeds
             if speaking_speeds!={}:
                 print("\nSpeaking Speed (Words Per Minute):")
-                for speaker, speed in speaking_speeds.speaking_speeds.items():
+                for speaker, speed in speaking_speeds.items():
                     print(f"- Speaker {speaker}: {speed:.2f} WPM")
                 logger.info("speed detection function done")
             else:
