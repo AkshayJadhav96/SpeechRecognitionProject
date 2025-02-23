@@ -182,18 +182,24 @@ async def process_call(file: UploadFile = File(...), tasks: str = Form(...)):
                 except Exception as e:
                     print(f"Error during call categorization: {e}")  # Debugging
                     # logger.exception("Error during Call Category in fastapi part",e)
-                    yield f"data: {json.dumps({'step': 'error', 'result': f'Call categorization failed: {str(e)}'})}\n\n"
+                    yield f"data: {json.dumps({'step': 'error',
+                     'result': f'Call categorization failed: {str(e)}'})}\n\n"
 
             # Generate Summary Table
             # Generate Summary Table
             summary_table = {
                 "columns": ["Analysis", "Speaker 1", "Speaker 2"],
-                "rows": []
+                "rows": [],
             }
 
             # Extract speaker-specific data
-            speaker_1_data = speaker_speech_data.speaker_speech_data.get("SPEAKER_00", None)
-            speaker_2_data = speaker_speech_data.speaker_speech_data.get("SPEAKER_01", None)
+            speaker_1_data = speaker_speech_data.
+            speaker_speech_data.
+            get("SPEAKER_00", None)
+
+            speaker_2_data = speaker_speech_data.
+            speaker_speech_data.
+            get("SPEAKER_01", None)
 
             # Add Speech Data row
             summary_table["rows"].append([
@@ -263,3 +269,4 @@ async def process_call(file: UploadFile = File(...), tasks: str = Form(...)):
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+    

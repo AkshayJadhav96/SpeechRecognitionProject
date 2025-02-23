@@ -1,9 +1,72 @@
-2025-02-23 19:54:01 | INFO | profanity_check:check_profanity:11 - Starting profanity check.
-2025-02-23 19:54:01 | WARNING | profanity_check:check_profanity:17 - Profanity detected in the text.
-2025-02-23 19:54:02 | INFO | required_phrases:check_required_phrases:17 - Starting required phrases check.
-2025-02-23 19:54:02 | INFO | required_phrases:check_required_phrases:26 - Required phrases found: ['hello']
-2025-02-23 19:54:03 | INFO | sentiment_analysis:analyse_sentiment:17 - Starting sentiment analysis.
-2025-02-23 19:54:03 | INFO | sentiment_analysis:analyse_sentiment:30 - Sentiment Analysis Results - Polarity: -0.03, Subjectivity: 0.48, Overall Sentiment: Negative
-2025-02-23 19:54:04 | INFO | categorize_call:categorize:18 - Starting call categorization.
-2025-02-23 19:54:04 | INFO | categorize_call:categorize:27 - Detected category counts: {'Billing Issues': 1, 'Complaints': 1}
-2025-02-23 19:54:04 | INFO | categorize_call:categorize:36 - Categorized call as: Billing Issues
+2025-02-23 23:40:40 | INFO | transcription:transcribe_audio_segment:12 - Starting transcription for file: tinlin.mp3
+2025-02-23 23:40:40 | ERROR | transcription:transcribe_audio_segment:44 - Error during transcription
+Traceback (most recent call last):
+
+  File "/home/yash_anil_aher/Documents/Mlops/Project1/SpeechRecognitionProject1/SpeechRecognitionProject/TUI/tui.py", line 304, in <module>
+    tui_interface()
+    └ <function tui_interface at 0x7eaa04183c40>
+
+  File "/home/yash_anil_aher/Documents/Mlops/Project1/SpeechRecognitionProject1/SpeechRecognitionProject/TUI/tui.py", line 196, in tui_interface
+    run_all(audio_file)
+    │       └ 'tinlin.mp3'
+    └ <function run_all at 0x7eab4b78afc0>
+
+  File "/home/yash_anil_aher/Documents/Mlops/Project1/SpeechRecognitionProject1/SpeechRecognitionProject/TUI/tui.py", line 33, in run_all
+    full_transcription = transcription.transcribe_audio_segment(transcription_input)
+                         │             │                        └ TranscribeAudioSegmentInput(audio_file='tinlin.mp3', start_time=None, end_time=None)
+                         │             └ <function transcribe_audio_segment at 0x7eaa04183ce0>
+                         └ <module 'call_processor_modules.transcription' from '/home/yash_anil_aher/Documents/Mlops/Project1/SpeechRecognitionProject1/...
+
+> File "/home/yash_anil_aher/Documents/Mlops/Project1/SpeechRecognitionProject1/SpeechRecognitionProject/call_processor_modules/transcription.py", line 15, in transcribe_audio_segment
+    audio = AudioSegment.from_file(data.audio_file)
+            │            │         │    └ 'tinlin.mp3'
+            │            │         └ TranscribeAudioSegmentInput(audio_file='tinlin.mp3', start_time=None, end_time=None)
+            │            └ <classmethod(<function AudioSegment.from_file at 0x7eaa041c5b20>)>
+            └ <class 'pydub.audio_segment.AudioSegment'>
+
+  File "/home/yash_anil_aher/Documents/Mlops/Project1/SpeechRecognitionProject1/SpeechRecognitionProject/.venv/lib/python3.12/site-packages/pydub/audio_segment.py", line 651, in from_file
+    file, close_file = _fd_or_path_or_tempfile(file, 'rb', tempfile=False)
+    │                  │                       └ 'tinlin.mp3'
+    │                  └ <function _fd_or_path_or_tempfile at 0x7eaa041ab380>
+    └ 'tinlin.mp3'
+  File "/home/yash_anil_aher/Documents/Mlops/Project1/SpeechRecognitionProject1/SpeechRecognitionProject/.venv/lib/python3.12/site-packages/pydub/utils.py", line 60, in _fd_or_path_or_tempfile
+    fd = open(fd, mode=mode)
+              │        └ 'rb'
+              └ 'tinlin.mp3'
+
+FileNotFoundError: [Errno 2] No such file or directory: 'tinlin.mp3'
+2025-02-23 23:40:40 | INFO | speaker_diarization:diarize:19 - Starting speaker diarization for file: tinlin.mp3
+2025-02-23 23:40:40 | ERROR | speaker_diarization:diarize:75 - Error in speaker Diarization : Hugging Face token not found in environment variables.
+Traceback (most recent call last):
+
+  File "/home/yash_anil_aher/Documents/Mlops/Project1/SpeechRecognitionProject1/SpeechRecognitionProject/TUI/tui.py", line 304, in <module>
+    tui_interface()
+    └ <function tui_interface at 0x7eaa04183c40>
+
+  File "/home/yash_anil_aher/Documents/Mlops/Project1/SpeechRecognitionProject1/SpeechRecognitionProject/TUI/tui.py", line 196, in tui_interface
+    run_all(audio_file)
+    │       └ 'tinlin.mp3'
+    └ <function run_all at 0x7eab4b78afc0>
+
+  File "/home/yash_anil_aher/Documents/Mlops/Project1/SpeechRecognitionProject1/SpeechRecognitionProject/TUI/tui.py", line 38, in run_all
+    diarization_results = speaker_diarization.diarize(diarization_input)
+                          │                   │       └ DiarizeInput(audio_file='tinlin.mp3')
+                          │                   └ <function diarize at 0x7eaa11f4ade0>
+                          └ <module 'call_processor_modules.speaker_diarization' from '/home/yash_anil_aher/Documents/Mlops/Project1/SpeechRecognitionPro...
+
+> File "/home/yash_anil_aher/Documents/Mlops/Project1/SpeechRecognitionProject1/SpeechRecognitionProject/call_processor_modules/speaker_diarization.py", line 23, in diarize
+    raise ValueError("Hugging Face token not found in environment variables.")
+
+ValueError: Hugging Face token not found in environment variables.
+2025-02-23 23:40:40 | INFO | speaker_speed:calculate_speaking_speed:52 - Calculated Speaking Speeds: {}
+2025-02-23 23:40:40 | INFO | pii_check:check_pii:22 - Starting PII detection.
+2025-02-23 23:40:40 | INFO | pii_check:check_pii:38 - No PII detected in the transcribed text.
+2025-02-23 23:40:40 | INFO | profanity_check:check_profanity:11 - Starting profanity check.
+2025-02-23 23:40:40 | INFO | profanity_check:check_profanity:20 - No profanity detected in the text.
+2025-02-23 23:40:40 | INFO | required_phrases:check_required_phrases:17 - Starting required phrases check.
+2025-02-23 23:40:40 | WARNING | required_phrases:check_required_phrases:28 - No required phrases found in the transcribed text.
+2025-02-23 23:40:40 | INFO | sentiment_analysis:analyse_sentiment:17 - Starting sentiment analysis.
+2025-02-23 23:40:40 | INFO | sentiment_analysis:analyse_sentiment:30 - Sentiment Analysis Results - Polarity: -0.40, Subjectivity: 0.60, Overall Sentiment: Negative
+2025-02-23 23:40:40 | INFO | categorize_call:categorize:18 - Starting call categorization.
+2025-02-23 23:40:40 | INFO | categorize_call:categorize:27 - Detected category counts: {}
+2025-02-23 23:40:40 | WARNING | categorize_call:categorize:38 - No matching category found. Categorizing as 'Unknown'.
