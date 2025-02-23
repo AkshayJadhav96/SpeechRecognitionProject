@@ -3,7 +3,7 @@ import os
 
 # Load configuration (these can be stored in a separate config file)
 LOG_FILE_NAME = "logs/application.log"
-LOG_ROTATION = "24h"  # Rotate logs every 24 hours
+LOG_ROTATION = "1h"  # Rotate logs every 24 hours
 LOG_COMPRESSION = "zip"  # Compress old logs into zip files
 LOG_LEVEL = "INFO"  # Change to DEBUG for more logs
 

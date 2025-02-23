@@ -7,6 +7,11 @@ import asyncio
 import json
 from pydub import AudioSegment
 
+# from logger_config import get_logger
+
+# logger = get_logger()
+
+
 import sys
 import os
 
@@ -34,6 +39,7 @@ async def process_call(file: UploadFile = File(...), tasks: str = Form(...)):
     file_path = f"temp_{file.filename}"
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
+    # logger.info(f"File Uploaded Successfully: (fastapi)":{file.filename} )
 
     # Parse the selected tasks
     selected_tasks = json.loads(tasks)
@@ -62,6 +68,7 @@ async def process_call(file: UploadFile = File(...), tasks: str = Form(...)):
                     await asyncio.sleep(1)
                 except Exception as e:
                     print(f"Error during transcription: {e}")  # Debugging
+                    # logger.exception("Error during Transcription in fastapi part",e)
                     yield f"data: {json.dumps({'step': 'error', 'result': f'Transcription failed: {str(e)}'})}\n\n"
 
             if "Speaker Diarization" in selected_tasks:
@@ -80,6 +87,7 @@ async def process_call(file: UploadFile = File(...), tasks: str = Form(...)):
                     yield f"data: {json.dumps({'step': 'diarization', 'result': results['diarization']})}\n\n"
                     await asyncio.sleep(1)
                 except Exception as e:
+                    # logger.exception("Error during speaker Diarization in fastapi part",e)
                     yield f"data: {json.dumps({'step': 'error', 'result': f'Diarization failed: {str(e)}'})}\n\n"
 
             if "Speaking Speed" in selected_tasks and diarization_results:
@@ -107,6 +115,7 @@ async def process_call(file: UploadFile = File(...), tasks: str = Form(...)):
                     await asyncio.sleep(1)
                 except Exception as e:
                     print(f"Error during PII check: {e}")  # Debugging
+                    # logger.exception("Error during PII Check in fastapi part",e)
                     yield f"data: {json.dumps({'step': 'error', 'result': f'PII check failed: {str(e)}'})}\n\n"
 
             if "Profanity Check" in selected_tasks and full_transcription:
@@ -123,6 +132,7 @@ async def process_call(file: UploadFile = File(...), tasks: str = Form(...)):
                     await asyncio.sleep(1)
                 except Exception as e:
                     print(f"Error during profanity check: {e}")  # Debugging
+                    # logger.exception("Error during Profanity in fastapi part",e)
                     yield f"data: {json.dumps({'step': 'error', 'result': f'Profanity check failed: {str(e)}'})}\n\n"
 
             if "Required Phrases" in selected_tasks and full_transcription:
@@ -139,6 +149,7 @@ async def process_call(file: UploadFile = File(...), tasks: str = Form(...)):
                     await asyncio.sleep(1)
                 except Exception as e:
                     print(f"Error during required phrases check: {e}")  # Debugging
+                    # logger.exception("Error during Required Phrases in fastapi part",e)
                     yield f"data: {json.dumps({'step': 'error', 'result': f'Required phrases check failed: {str(e)}'})}\n\n"
 
             if "Sentiment Analysis" in selected_tasks and full_transcription:
@@ -156,6 +167,7 @@ async def process_call(file: UploadFile = File(...), tasks: str = Form(...)):
                     await asyncio.sleep(1)
                 except Exception as e:
                     print(f"Error during sentiment analysis: {e}")  # Debugging
+                    # logger.exception("Error during Sentiment Analysis in fastapi part",e)
                     yield f"data: {json.dumps({'step': 'error', 'result': f'Sentiment analysis failed: {str(e)}'})}\n\n"
 
             if "Call Category" in selected_tasks and full_transcription:
@@ -169,6 +181,7 @@ async def process_call(file: UploadFile = File(...), tasks: str = Form(...)):
                     await asyncio.sleep(1)
                 except Exception as e:
                     print(f"Error during call categorization: {e}")  # Debugging
+                    # logger.exception("Error during Call Category in fastapi part",e)
                     yield f"data: {json.dumps({'step': 'error', 'result': f'Call categorization failed: {str(e)}'})}\n\n"
 
             # Generate Summary Table
@@ -242,6 +255,7 @@ async def process_call(file: UploadFile = File(...), tasks: str = Form(...)):
             yield f"data: {json.dumps({'step': 'complete', 'result': 'Call processing completed.'})}\n\n"
 
         except Exception as e:
+            # logger.exception("Error during process_call in fastapi part",e)
             yield f"data: {json.dumps({'step': 'error', 'result': str(e)})}\n\n"
 
     return StreamingResponse(process_call_step_by_step(file_path, selected_tasks), media_type="text/event-stream")

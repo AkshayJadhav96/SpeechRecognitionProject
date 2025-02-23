@@ -2185,6 +2185,7 @@ dependencies = [
     { name = "speechrecognition" },
     { name = "streamlit" },
     { name = "textblob" },
+    { name = "uvicorn" },
 ]
 
 [package.metadata]
@@ -2203,6 +2204,7 @@ requires-dist = [
     { name = "speechrecognition", specifier = ">=3.14.1" },
     { name = "streamlit", specifier = ">=1.42.2" },
     { name = "textblob", specifier = ">=0.19.0" },
+    { name = "uvicorn", specifier = ">=0.34.0" },
 ]
 
 [[package]]
