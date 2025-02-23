@@ -20,10 +20,17 @@ def analyse_sentiment(data: AnalyseSentimentInput) -> AnalyseSentimentOutput:
         polarity = blob.sentiment.polarity
         subjectivity = blob.sentiment.subjectivity
 
-        logger.info(f"Sentiment Analysis Results - Polarity: {polarity:.2f}, Subjectivity: {subjectivity:.2f}")
+        if polarity > 0:
+            overall_sentiment = "Positive"
+        elif polarity < 0:
+            overall_sentiment = "Negative"
+        elif polarity ==0:
+            overall_sentiment = "Neutral"
 
-        return AnalyseSentimentOutput(polarity=polarity, subjectivity=subjectivity)
+        logger.info(f"Sentiment Analysis Results - Polarity: {polarity:.2f}, Subjectivity: {subjectivity:.2f}, Overall Sentiment: {overall_sentiment}")
+
+        return AnalyseSentimentOutput(polarity=polarity, subjectivity=subjectivity, overall_sentiment=overall_sentiment)
 
     except Exception as e:
         logger.exception("Error in sentiment analysis")
-        return AnalyseSentimentOutput(polarity=0.0, subjectivity=0.0)
+        return AnalyseSentimentOutput(polarity=0.0, subjectivity=0.0, overall_sentiment="Neutral")

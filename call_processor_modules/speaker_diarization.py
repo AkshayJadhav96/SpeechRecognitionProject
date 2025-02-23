@@ -8,6 +8,11 @@ from logger_config import get_logger
 logger = get_logger()
 
 def diarize(data: DiarizeInput) -> DiarizeOutput:
+    # Initialize variables to avoid UnboundLocalError
+    speaker_segments = []
+    speaking_ratio = "N/A (only one speaker detected)"
+    interruptions = 0
+    first_speaker_time = 0.0
 
     try:
         audio_file = data.audio_file
@@ -16,6 +21,7 @@ def diarize(data: DiarizeInput) -> DiarizeOutput:
         token = os.getenv("HUGGING_FACE_TOKEN")
         if not token:
             raise ValueError("Hugging Face token not found in environment variables.")
+        
         pipeline = Pipeline.from_pretrained("pyannote/speaker-diarization")
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         pipeline.to(device)
@@ -59,29 +65,18 @@ def diarize(data: DiarizeInput) -> DiarizeOutput:
             speaking_ratio = total_time[speakers[0]] / total_time[speakers[1]]
         else:
             speaking_ratio = "N/A (only one speaker detected)"
-            # logger.warning("Only One Speaker Detected")
+            logger.warning("Only One Speaker Detected")
 
         logger.warning(f"Speaking ratio: {speaking_ratio}")
         logger.info(f"Interruptions count: {interruptions}")
         logger.info(f"Time to first token: {first_speaker_time or 0.0}")
 
-        return DiarizeOutput(
-            speaker_segments=speaker_segments,
-            speaking_ratio=speaking_ratio,
-            interruptions=interruptions,
-            time_to_first_token=first_speaker_time or 0.0
-        )
-    
     except Exception as e:
         logger.exception(f"Error in speaker Diarization : {str(e)}")
-        return DiarizeOutput(
-            speaker_segments=[],
-            speaking_ratio=speaking_ratio,
-            interruptions=interruptions,
-            time_to_first_token=first_speaker_time or 0.0
-        )
-        
-    # speaker_segments: List[SpeakerSegment]
-    # speaking_ratio: Union[float, str]
-    # interruptions: int
-    # time_to_first_token: float
+    
+    return DiarizeOutput(
+        speaker_segments=speaker_segments,
+        speaking_ratio=speaking_ratio,
+        interruptions=interruptions,
+        time_to_first_token=first_speaker_time or 0.0
+    )

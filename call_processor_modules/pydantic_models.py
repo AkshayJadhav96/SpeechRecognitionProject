@@ -40,6 +40,7 @@ class AnalyseSentimentInput(BaseModel):
 class AnalyseSentimentOutput(BaseModel):
     polarity: float
     subjectivity: float
+    overall_sentiment: str
 
 # Model for `diarize`
 class DiarizeInput(BaseModel):
