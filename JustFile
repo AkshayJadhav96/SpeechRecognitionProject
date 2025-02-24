@@ -4,6 +4,9 @@ set dotenv-load
 default:
   just --list
 
+setup:
+    uv sync
+
 run-backend:
     @-pkill -f backend.py
     uv run fastapi run "bui/backend.py"
