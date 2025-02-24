@@ -60,7 +60,8 @@ def diarize(data: DiarizeInput) -> DiarizeOutput:
             error_text = "Hugging Face token not found in environment variables."
             raise_error(error_text)
 
-        pipeline = Pipeline.from_pretrained("pyannote/speaker-diarization")
+        pipeline = Pipeline.from_pretrained("pyannote/speaker-diarization",
+                                            use_auth_token=token)
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         pipeline.to(device)
         logger.info("Pipeline loaded and moved to {device}")

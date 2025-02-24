@@ -1,0 +1,6 @@
+[logging]
+log_file_name = "logs/application.log"
+log_rotation = "1h"
+log_compression = "zip"
+min_log_level = "INFO"
+logging_server_port_no = 5000

@@ -104,7 +104,7 @@ def initialize_results(selected_tasks: list[str]) -> dict[str, str]:
     for task in selected_tasks:
         key = status_mapping.get(task)
         if key:
-            results[key] = "Processing..."
+            results[task.lower().replace(" ", "_")] = "Processing..."
             setattr(st.session_state, key, "⏳ Processing")
 
     return results
@@ -131,7 +131,7 @@ def send_audio_to_backend(files: dict[str, requests.Response| None],
         f"{BACKEND_URL}/process_call/",
         files=files,
         data={"tasks": json.dumps(selected_tasks)},
-        timeout=30,  # Added timeout to fix S113
+        timeout=1200,  # Added timeout to fix S113
         stream=True,
     )
 
@@ -268,37 +268,36 @@ def take(result: dict[str, str | float], results: dict[str, str | list[str]],
         raise ValueError(error_message)
 
 def process_audio(audio_file: str, selected_tasks: list[str]) -> Exception | None:
-    """Process an audio file by sending it to the backend and updating the UI.
+    """Process an audio file by sending it to the backend and updating the UI."""
+    try:
+        files = prepare_audio_file(audio_file)
+        response = send_audio_to_backend(files, selected_tasks)
 
-    Args:
-        audio_file (str): Path to the audio file to be processed.
-        selected_tasks (List[str]): List of tasks to be performed on the audio.
+        results = initialize_results(selected_tasks)
 
-    Returns:
-        Optional[Exception]: Returns an exception if there is a JSON decoding error,
-        otherwise returns None.
-
-    """
-    # Send the audio file to the backend for processing
-    files = prepare_audio_file(audio_file)
-    response = send_audio_to_backend(files, selected_tasks)
-
-    results = initialize_results(selected_tasks)
-
-    # Process the streaming response
-    for line in response.iter_lines():
-        if line:
-            decoded_line = line.decode("utf-8")
-            if decoded_line.startswith("data:"):
-                try:
-                    # Extract the JSON part after "data:"
-                    json_data = decoded_line[5:].strip()
-                    data = json.loads(json_data)
-                    step = data["step"]
-                    result = data["result"]
-                    take(result, results, step)
-                except json.JSONDecodeError as e:
-                    return e
+        for line in response.iter_lines():
+            if line:
+                decoded_line = line.decode("utf-8")
+                if decoded_line.startswith("data:"):
+                    try:
+                        json_data = decoded_line[5:].strip()
+                        data = json.loads(json_data)
+                        step = data["step"]
+                        result = data["result"]
+                        take(result, results, step)
+                    except json.JSONDecodeError as e:
+                        st.error(f"Failed to decode JSON: {e}")
+                        return e
+                    except KeyError as e:
+                        st.error(f"Missing key in response: {e}")
+                        return e
+    except requests.exceptions.ReadTimeout as e:
+        st.error("Backend request timed out. Please try again.")
+        return e
+    except Exception as e:
+        st.error(f"An error occurred: {e}")
+        return e
+        raise  # Re-raise the exception to avoid hiding it
     return None
 
 
