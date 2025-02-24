@@ -1,31 +1,35 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException, Form
-from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
-import os
-import shutil
 import asyncio
 import json
-from pydub import AudioSegment
+import os
+import shutil
 
 # from logger_config import get_logger
-
 # logger = get_logger()
-
-
 import sys
-import os
+
+from fastapi import FastAPI, File, Form, UploadFile
+from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 # Import individual modules
-from call_processor_modules import categorize_call
-from call_processor_modules import pii_check
-from call_processor_modules import profanity_check
-from call_processor_modules.required_phrases import check_required_phrases,CheckRequiredPhrasesInput
-from call_processor_modules import sentiment_analysis
-from call_processor_modules import speaker_diarization
-from call_processor_modules import speaker_speed
-from call_processor_modules import transcription
-from call_processor_modules.speaker import get_speaker_speech_data,GetSpeakerSpeechDataInput
+from call_processor_modules import (
+    categorize_call,
+    pii_check,
+    profanity_check,
+    sentiment_analysis,
+    speaker_diarization,
+    speaker_speed,
+    transcription,
+)
+from call_processor_modules.required_phrases_check import (
+    CheckRequiredPhrasesInput,
+    check_required_phrases,
+)
+from call_processor_modules.speaker import (
+    GetSpeakerSpeechDataInput,
+    get_speaker_speech_data,
+)
 
 app = FastAPI()
 
@@ -69,7 +73,7 @@ async def process_call(file: UploadFile = File(...), tasks: str = Form(...)):
                 except Exception as e:
                     print(f"Error during transcription: {e}")  # Debugging
                     # logger.exception("Error during Transcription in fastapi part",e)
-                    yield f"data: {json.dumps({'step': 'error', 'result': f'Transcription failed: {str(e)}'})}\n\n"
+                    yield f"data: {json.dumps({'step': 'error', 'result': f'Transcription failed: {e!s}'})}\n\n"
 
             if "Speaker Diarization" in selected_tasks:
                 try:
@@ -82,18 +86,18 @@ async def process_call(file: UploadFile = File(...), tasks: str = Form(...)):
                         ],
                         "speaking_ratio": diarization_results.speaking_ratio,
                         "interruptions": diarization_results.interruptions,
-                        "time_to_first_token": diarization_results.time_to_first_token
+                        "time_to_first_token": diarization_results.time_to_first_token,
                     }
                     yield f"data: {json.dumps({'step': 'diarization', 'result': results['diarization']})}\n\n"
                     await asyncio.sleep(1)
                 except Exception as e:
                     # logger.exception("Error during speaker Diarization in fastapi part",e)
-                    yield f"data: {json.dumps({'step': 'error', 'result': f'Diarization failed: {str(e)}'})}\n\n"
+                    yield f"data: {json.dumps({'step': 'error', 'result': f'Diarization failed: {e!s}'})}\n\n"
 
             if "Speaking Speed" in selected_tasks and diarization_results:
                 speech_data_input = GetSpeakerSpeechDataInput(
                     audio_file=file_path,
-                    speaker_segments=diarization_results.speaker_segments
+                    speaker_segments=diarization_results.speaker_segments,
                 )
                 speaker_speech_data = get_speaker_speech_data(speech_data_input)
                 speed_results = speaker_speed.calculate_speaking_speed(speaker_speech_data)
@@ -108,7 +112,7 @@ async def process_call(file: UploadFile = File(...), tasks: str = Form(...)):
                     pii_results = pii_check.check_pii(pii_data_input)
                     results["pii"] = {
                         "detected": pii_results.detected,
-                        "masked_text": pii_results.masked_text
+                        "masked_text": pii_results.masked_text,
                     }
                     print(f"PII Results: {results['pii']}")  # Debugging
                     yield f"data: {json.dumps({'step': 'pii', 'result': results['pii']})}\n\n"
@@ -116,7 +120,7 @@ async def process_call(file: UploadFile = File(...), tasks: str = Form(...)):
                 except Exception as e:
                     print(f"Error during PII check: {e}")  # Debugging
                     # logger.exception("Error during PII Check in fastapi part",e)
-                    yield f"data: {json.dumps({'step': 'error', 'result': f'PII check failed: {str(e)}'})}\n\n"
+                    yield f"data: {json.dumps({'step': 'error', 'result': f'PII check failed: {e!s}'})}\n\n"
 
             if "Profanity Check" in selected_tasks and full_transcription:
                 try:
@@ -125,7 +129,7 @@ async def process_call(file: UploadFile = File(...), tasks: str = Form(...)):
                     profanity_results = profanity_check.check_profanity(profanity_input_data)
                     results["profanity"] = {
                         "detected": profanity_results.detected,
-                        "censored_text": profanity_results.censored_text
+                        "censored_text": profanity_results.censored_text,
                     }
                     print(f"Profanity Results: {results['profanity']}")  # Debugging
                     yield f"data: {json.dumps({'step': 'profanity', 'result': results['profanity']})}\n\n"
@@ -133,7 +137,7 @@ async def process_call(file: UploadFile = File(...), tasks: str = Form(...)):
                 except Exception as e:
                     print(f"Error during profanity check: {e}")  # Debugging
                     # logger.exception("Error during Profanity in fastapi part",e)
-                    yield f"data: {json.dumps({'step': 'error', 'result': f'Profanity check failed: {str(e)}'})}\n\n"
+                    yield f"data: {json.dumps({'step': 'error', 'result': f'Profanity check failed: {e!s}'})}\n\n"
 
             if "Required Phrases" in selected_tasks and full_transcription:
                 try:
@@ -142,7 +146,7 @@ async def process_call(file: UploadFile = File(...), tasks: str = Form(...)):
                     phrases_results = check_required_phrases(phrases_input_data)
                     results["required_phrases"] = {
                         "required_phrases_present": phrases_results.required_phrases_present,
-                        "present_phrases": phrases_results.present_phrases
+                        "present_phrases": phrases_results.present_phrases,
                     }
                     print(f"Required Phrases Results: {results['required_phrases']}")  # Debugging
                     yield f"data: {json.dumps({'step': 'required_phrases', 'result': results['required_phrases']})}\n\n"
@@ -150,7 +154,7 @@ async def process_call(file: UploadFile = File(...), tasks: str = Form(...)):
                 except Exception as e:
                     print(f"Error during required phrases check: {e}")  # Debugging
                     # logger.exception("Error during Required Phrases in fastapi part",e)
-                    yield f"data: {json.dumps({'step': 'error', 'result': f'Required phrases check failed: {str(e)}'})}\n\n"
+                    yield f"data: {json.dumps({'step': 'error', 'result': f'Required phrases check failed: {e!s}'})}\n\n"
 
             if "Sentiment Analysis" in selected_tasks and full_transcription:
                 try:
@@ -160,7 +164,7 @@ async def process_call(file: UploadFile = File(...), tasks: str = Form(...)):
                     results["sentiment"] = {
                         "polarity": sentiment_results.polarity,
                         "subjectivity": sentiment_results.subjectivity,
-                        "overall_sentiment": sentiment_results.overall_sentiment
+                        "overall_sentiment": sentiment_results.overall_sentiment,
                     }
                     print(f"Sentiment Results: {results['sentiment']}")  # Debugging
                     yield f"data: {json.dumps({'step': 'sentiment', 'result': results['sentiment']})}\n\n"
@@ -168,7 +172,7 @@ async def process_call(file: UploadFile = File(...), tasks: str = Form(...)):
                 except Exception as e:
                     print(f"Error during sentiment analysis: {e}")  # Debugging
                     # logger.exception("Error during Sentiment Analysis in fastapi part",e)
-                    yield f"data: {json.dumps({'step': 'error', 'result': f'Sentiment analysis failed: {str(e)}'})}\n\n"
+                    yield f"data: {json.dumps({'step': 'error', 'result': f'Sentiment analysis failed: {e!s}'})}\n\n"
 
             if "Call Category" in selected_tasks and full_transcription:
                 try:
@@ -183,7 +187,7 @@ async def process_call(file: UploadFile = File(...), tasks: str = Form(...)):
                     print(f"Error during call categorization: {e}")  # Debugging
                     # logger.exception("Error during Call Category in fastapi part",e)
                     yield f"data: {json.dumps({'step': 'error',
-                     'result': f'Call categorization failed: {str(e)}'})}\n\n"
+                     'result': f'Call categorization failed: {e!s}'})}\n\n"
 
             # Generate Summary Table
             # Generate Summary Table
@@ -201,14 +205,14 @@ async def process_call(file: UploadFile = File(...), tasks: str = Form(...)):
             summary_table["rows"].append([
                 "Speech Data",
                 f"Length: {speaker_1_data.length if speaker_1_data else 'N/A'}\nTime: {speaker_1_data.time_period if speaker_1_data else 'N/A'}",
-                f"Length: {speaker_2_data.length if speaker_2_data else 'N/A'}\nTime: {speaker_2_data.time_period if speaker_2_data else 'N/A'}"
+                f"Length: {speaker_2_data.length if speaker_2_data else 'N/A'}\nTime: {speaker_2_data.time_period if speaker_2_data else 'N/A'}",
             ])
 
             # Add Speaking Speed row
             summary_table["rows"].append([
                 "Speaking Speed (WPM)",
                 f"{speed_results.speaking_speeds.get('SPEAKER_00', 'N/A')}",
-                f"{speed_results.speaking_speeds.get('SPEAKER_01', 'N/A')}"
+                f"{speed_results.speaking_speeds.get('SPEAKER_01', 'N/A')}",
             ])
 
             # Add PII Check row
@@ -217,7 +221,7 @@ async def process_call(file: UploadFile = File(...), tasks: str = Form(...)):
             summary_table["rows"].append([
                 "PII Check",
                 f"Detected: {pii_speaker_1.detected if pii_speaker_1 else 'N/A'}",
-                f"Detected: {pii_speaker_2.detected if pii_speaker_2 else 'N/A'}"
+                f"Detected: {pii_speaker_2.detected if pii_speaker_2 else 'N/A'}",
             ])
 
             # Add Profanity Check row
@@ -226,7 +230,7 @@ async def process_call(file: UploadFile = File(...), tasks: str = Form(...)):
             summary_table["rows"].append([
                 "Profanity Check",
                 f"Detected: {profanity_speaker_1.detected if profanity_speaker_1 else 'N/A'}",
-                f"Detected: {profanity_speaker_2.detected if profanity_speaker_2 else 'N/A'}"
+                f"Detected: {profanity_speaker_2.detected if profanity_speaker_2 else 'N/A'}",
             ])
 
             # Add Required Phrases row
@@ -237,7 +241,7 @@ async def process_call(file: UploadFile = File(...), tasks: str = Form(...)):
             summary_table["rows"].append([
                 "Required Phrases",
                 required_phrases_speaker_1,
-                required_phrases_speaker_2
+                required_phrases_speaker_2,
             ])
 
             # Add Sentiment Analysis row
@@ -246,7 +250,7 @@ async def process_call(file: UploadFile = File(...), tasks: str = Form(...)):
             summary_table["rows"].append([
                 "Sentiment Analysis",
                 f"Polarity: {sentiment_speaker_1.polarity if sentiment_speaker_1 else 'N/A'}\nSubjectivity: {sentiment_speaker_1.subjectivity if sentiment_speaker_1 else 'N/A'}\nOverall: {sentiment_speaker_1.overall_sentiment if sentiment_speaker_1 else 'N/A'}",
-                f"Polarity: {sentiment_speaker_2.polarity if sentiment_speaker_2 else 'N/A'}\nSubjectivity: {sentiment_speaker_2.subjectivity if sentiment_speaker_2 else 'N/A'}\nOverall: {sentiment_speaker_2.overall_sentiment if sentiment_speaker_2 else 'N/A'}"
+                f"Polarity: {sentiment_speaker_2.polarity if sentiment_speaker_2 else 'N/A'}\nSubjectivity: {sentiment_speaker_2.subjectivity if sentiment_speaker_2 else 'N/A'}\nOverall: {sentiment_speaker_2.overall_sentiment if sentiment_speaker_2 else 'N/A'}",
             ])
 
             # Yield the summary table
@@ -265,4 +269,3 @@ async def process_call(file: UploadFile = File(...), tasks: str = Form(...)):
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
-    

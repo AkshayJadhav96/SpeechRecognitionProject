@@ -5,7 +5,7 @@ from call_processor_modules.pydantic_models import TranscribeAudioSegmentInput,T
 
 from call_processor_modules.transcription import transcribe_audio_segment
 from call_processor_modules.profanity_check import check_profanity
-from call_processor_modules.required_phrases import check_required_phrases
+from call_processor_modules.required_phrases_check import check_required_phrases
 from call_processor_modules.categorize_call import categorize
 from call_processor_modules.pii_check import check_pii
 from call_processor_modules.sentiment_analysis import analyse_sentiment

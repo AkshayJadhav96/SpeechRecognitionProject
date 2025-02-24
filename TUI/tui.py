@@ -6,7 +6,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from call_processor_modules import categorize_call
 from call_processor_modules import pii_check
 from call_processor_modules import profanity_check
-from call_processor_modules.required_phrases import check_required_phrases,CheckRequiredPhrasesInput
+from call_processor_modules.required_phrases_check import check_required_phrases,CheckRequiredPhrasesInput
 from call_processor_modules import sentiment_analysis
 from call_processor_modules import speaker_diarization
 from call_processor_modules import speaker_speed
