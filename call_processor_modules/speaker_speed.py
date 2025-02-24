@@ -23,8 +23,6 @@ def calculate_speaking_speed(
 
     """
     try:
-        # logger.info(
-        # "Starting speaking speed calculation for file: {data.audio_file}")
         speaker_speech_data = input_speech_data.speaker_speech_data
         speaking_speeds = {
             speaker: (data.length / data.time_period) * 60

@@ -1,12 +1,39 @@
+"""Call Processing Dashboard - Streamlit Application.
+
+This Streamlit application allows users to upload an audio file
+and select a set of tasks to run for call analysis.
+The tasks available are transcription, speaker diarization, speaking speed analysis,
+PII check, profanity check, required phrases check, sentiment analysis,
+and call category identification.
+The backend (FastAPI) handles the processing of these tasks,
+and the results are displayed in real-time on the dashboard.
+
+Key Features:
+- Upload audio files (MP3/WAV)
+- Select from a range of processing tasks
+- View results for each task, including detailed insights
+such as speaking speed, sentiment analysis, and more
+- Real-time task status updates (processing, completed, error)
+
+Dependencies:
+- Streamlit: Web framework for creating the dashboard
+- Requests: To send requests to the backend FastAPI server
+- JSON: To handle JSON responses from the backend
+
+Usage:
+1. Upload an audio file.
+2. Select the tasks to run.
+3. Click "Process Audio" to start the analysis.
+4. View the results under each task section.
+
+"""
+
 import json
+import shutil
 from pathlib import Path
 
 import requests
 import streamlit as st
-
-# from logger_config import get_logger
-
-# logger = get_logger()
 
 # Define the FastAPI backend URL
 BACKEND_URL = "http://127.0.0.1:8000"
@@ -48,7 +75,7 @@ if "transcription_output" not in st.session_state:
         "process_status": "❌ Not selected",
     })
 
-def initialize_results(selected_tasks):
+def initialize_results(selected_tasks: list[str]) -> dict[str, str]:
     """Initialize the results dictionary and set UI status for selected tasks."""
     results = {
         "transcription": "Not selected",
@@ -82,15 +109,23 @@ def initialize_results(selected_tasks):
 
     return results
 
-def prepare_audio_file(audio_file):
-    """Prepare the audio file for uploading."""
-    if isinstance(audio_file, str):  # If it's a file path, open it
+
+
+def prepare_audio_file(audio_file: str | Path) -> dict[str, requests.Response | None]:
+    """Prepare the audio file for uploading by ensuring it's in the root directory."""
+    root_path = Path.cwd() / "uploaded_audio.mp3" # Save file in the root directory
+
+    if isinstance(audio_file, str):  # If it's a file path, check its location
         audio_path = Path(audio_file)
-        return {"file": open(audio_path, "rb")}  # Keep the file open
-    return {"file": audio_file}
 
+        # Move the file to root directory if it's not already there
+        if audio_path.resolve() != root_path.resolve():
+            shutil.move(audio_path, root_path)
 
-def send_audio_to_backend(files, selected_tasks):
+    return {"file": root_path.open("rb")}  # Keep the file open
+
+def send_audio_to_backend(files: dict[str, requests.Response| None],
+    selected_tasks: list[str]) -> requests.Response:
     """Send the audio file and tasks to the backend for processing."""
     return requests.post(
         f"{BACKEND_URL}/process_call/",
@@ -100,7 +135,7 @@ def send_audio_to_backend(files, selected_tasks):
         stream=True,
     )
 
-def update_transcription(result, results):
+def update_transcription(result: str, results: dict[str, str]) -> None:
     """Update transcription-related outputs."""
     results["transcription"] = result
     st.session_state.transcription_output = (
@@ -109,8 +144,7 @@ def update_transcription(result, results):
     )
     st.session_state.transcription_status = "✅ Completed"
 
-
-def update_diarization(result, results):
+def update_diarization(result: dict[str, float | str], results: dict[str, str]) -> None:
     """Update diarization-related outputs."""
     results["diarization"] = result
     st.session_state.diarization_output = {
@@ -121,8 +155,7 @@ def update_diarization(result, results):
     }
     st.session_state.diarization_status = "✅ Completed"
 
-
-def update_speaking_speed(result, results):
+def update_speaking_speed(result: dict[str, float], results: dict[str, str]) -> None:
     """Update speaking speed-related outputs."""
     results["speaking_speed"] = result
     st.session_state.speaking_speed_output = (
@@ -137,8 +170,7 @@ def update_speaking_speed(result, results):
     )
     st.session_state.speaking_speed_status = "✅ Completed"
 
-
-def update_pii(result, results):
+def update_pii(result: dict[str, bool | str], results: dict[str, str]) -> None:
     """Update PII-related outputs."""
     results["pii"] = result
     st.session_state.pii_output = (
@@ -149,8 +181,7 @@ def update_pii(result, results):
     )
     st.session_state.pii_status = "✅ Completed"
 
-
-def update_profanity(result, results):
+def update_profanity(result: dict[str, bool | str], results: dict[str, str]) -> None:
     """Update profanity-related outputs."""
     results["profanity"] = result
     st.session_state.profanity_output = (
@@ -161,8 +192,8 @@ def update_profanity(result, results):
     )
     st.session_state.profanity_status = "✅ Completed"
 
-
-def update_required_phrases(result, results):
+def update_required_phrases(result: dict[str, list[str] | bool],
+    results: dict[str, str]) -> None:
     """Update required phrases-related outputs."""
     results["required_phrases"] = result
     st.session_state.phrases_output = (
@@ -175,8 +206,7 @@ def update_required_phrases(result, results):
     )
     st.session_state.phrases_status = "✅ Completed"
 
-
-def update_sentiment(result, results):
+def update_sentiment(result: dict[str, float | str], results: dict[str, str]) -> None:
     """Update sentiment-related outputs."""
     results["sentiment"] = result
     st.session_state.sentiment_output = (
@@ -189,8 +219,7 @@ def update_sentiment(result, results):
     )
     st.session_state.sentiment_status = "✅ Completed"
 
-
-def update_category(result, results):
+def update_category(result: dict[str, str], results: dict[str, str]) -> None:
     """Update category-related outputs."""
     results["category"] = result
     st.session_state.category_output = (
@@ -199,15 +228,13 @@ def update_category(result, results):
     )
     st.session_state.category_status = "✅ Completed"
 
-
-def update_summary(result, results):
+def update_summary(result: dict[str, str], results: dict[str, str]) -> None:
     """Update summary-related outputs."""
     results["summary"] = result
     st.session_state.summary_output = result  # Store summary data
     st.session_state.summary_status = "✅ Completed"
 
-
-def update_complete(result, results):
+def update_complete(result: str, results: dict[str, str]) -> None:
     """Update process completion-related outputs."""
     results["message"] = result
     st.session_state.process_output = (
@@ -215,7 +242,6 @@ def update_complete(result, results):
         f"{result}"
     )
     st.session_state.process_status = "✅ Completed"
-
 
 # Dictionary-based dispatch
 STEP_HANDLERS = {
@@ -231,8 +257,8 @@ STEP_HANDLERS = {
     "complete": update_complete,
 }
 
-
-def take(result, results, step):
+def take(result: dict[str, str | float], results: dict[str, str | list[str]],
+    step: str) -> None:
     """Update the results dictionary and output variables based on the step."""
     handler = STEP_HANDLERS.get(step)
     if handler:
@@ -241,16 +267,16 @@ def take(result, results, step):
         error_message = f"Unknown step: {step}"
         raise ValueError(error_message)
 
-# Function to process the audio file and update the UI progressively
-def process_audio(audio_file, selected_tasks):
+def process_audio(audio_file: str, selected_tasks: list[str]) -> Exception | None:
     """Process an audio file by sending it to the backend and updating the UI.
 
     Args:
-        audio_file (str or Path): Path to the audio file to be processed.
-        selected_tasks (list): List of tasks to be performed on the audio.
+        audio_file (str): Path to the audio file to be processed.
+        selected_tasks (List[str]): List of tasks to be performed on the audio.
 
     Returns:
-        None
+        Optional[Exception]: Returns an exception if there is a JSON decoding error,
+        otherwise returns None.
 
     """
     # Send the audio file to the backend for processing
@@ -270,34 +296,35 @@ def process_audio(audio_file, selected_tasks):
                     data = json.loads(json_data)
                     step = data["step"]
                     result = data["result"]
-                    take(result,results,step)
+                    take(result, results, step)
                 except json.JSONDecodeError as e:
                     return e
     return None
 
 
-
 # Streamlit App
 st.set_page_config(page_title="Call Processing Dashboard", page_icon="🎙️", layout="wide")
 
-# Sidebar for inputs
 with st.sidebar:
     st.title("🎙️ Call Processing Dashboard")
     st.markdown("Upload an audio file and select the tasks you want to run.")
 
-    # Audio input
     audio_file = st.file_uploader("Upload Audio File", type=["wav", "mp3"])
+    selected_tasks = [task for task in TASKS if st.checkbox(task, value=True)]
 
-    # Task selection with checkboxes
-    selected_tasks = [task for task in TASKS if st.checkbox(task,value=True)]
-
-    # Submit button
     if st.button("Process Audio"):
         if audio_file is not None:
+            save_path = Path.cwd() / "uploaded_audio.mp3"
+
+            # Save the uploaded file to root directory
+            with save_path.open("wb") as f:
+                f.write(audio_file.read())
+
             with st.spinner("Processing..."):
-                process_audio(audio_file.name, selected_tasks)
+                process_audio(str(save_path), selected_tasks)  # Pass correct path
         else:
             st.warning("Please upload an audio file before processing.")
+
 
 # Main content area
 st.header("📝 Call Processing Results")
@@ -307,7 +334,7 @@ st.header("📝 Call Processing Results")
 # 1. Transcription
 st.subheader("📝 Transcription")
 with st.expander("View Transcription", expanded=True):
-    st.markdown(st.session_state.get("transcription_output", "Not selected"),\
+    st.markdown(st.session_state.get("transcription_output", "Not selected"),
     unsafe_allow_html=True)
     if st.session_state.get("transcription_status", "").startswith("✅"):
         st.success(st.session_state["transcription_status"])
@@ -327,18 +354,17 @@ with st.expander("View Speaker Diarization", expanded=True):
         if "speaking_ratio" in diarization_output:
             st.markdown(
                 f"<span style='color:blue;'>**Speaking Ratio:**</span>"
-                f"{diarization_output['speaking_ratio']}</span>",\
+                f"{diarization_output['speaking_ratio']}</span>",
                 unsafe_allow_html=True)
         if "interruptions" in diarization_output:
             st.markdown(
                 f"<span style='color:red;'>**Interruptions:**</span>"
-                f"{diarization_output['interruptions']}</span>",\
-                unsafe_allow_html=True)
+                f"{diarization_output['interruptions']}</span>", unsafe_allow_html=True)
         if "time_to_first_token" in diarization_output:
             st.markdown(
                 f"<span style='color:green;'>**Time to First Token (TTFT):**</span>"
-                f"{diarization_output['time_to_first_token']:.2f}s</span>",\
-            unsafe_allow_html=True)
+                f"{diarization_output['time_to_first_token']:.2f}s</span>",
+                unsafe_allow_html=True)
     else:
         st.markdown("Not selected")
 
@@ -350,7 +376,7 @@ with st.expander("View Speaker Diarization", expanded=True):
 # 3. Speaking Speed
 st.subheader("⏩ Speaking Speed")
 with st.expander("View Speaking Speed", expanded=True):
-    st.markdown(st.session_state.get("speaking_speed_output", "Not selected"),\
+    st.markdown(st.session_state.get("speaking_speed_output", "Not selected"),
     unsafe_allow_html=True)
     if st.session_state.get("speaking_speed_status", "").startswith("✅"):
         st.success(st.session_state["speaking_speed_status"])
@@ -360,7 +386,7 @@ with st.expander("View Speaking Speed", expanded=True):
 # 4. PII Check
 st.subheader("🔒 PII Check")
 with st.expander("View PII Check", expanded=True):
-    st.markdown(st.session_state.get("pii_output", "Not selected"),\
+    st.markdown(st.session_state.get("pii_output", "Not selected"),
     unsafe_allow_html=True)
     if st.session_state.get("pii_status", "").startswith("✅"):
         st.success(st.session_state["pii_status"])
@@ -370,7 +396,7 @@ with st.expander("View PII Check", expanded=True):
 # 5. Profanity Check
 st.subheader("🚫 Profanity Check")
 with st.expander("View Profanity Check", expanded=True):
-    st.markdown(st.session_state.get("profanity_output", "Not selected"),\
+    st.markdown(st.session_state.get("profanity_output", "Not selected"),
     unsafe_allow_html=True)
     if st.session_state.get("profanity_status", "").startswith("✅"):
         st.success(st.session_state["profanity_status"])
@@ -380,7 +406,7 @@ with st.expander("View Profanity Check", expanded=True):
 # 6. Required Phrases
 st.subheader("🔍 Required Phrases")
 with st.expander("View Required Phrases", expanded=True):
-    st.markdown(st.session_state.get("phrases_output", "Not selected"),\
+    st.markdown(st.session_state.get("phrases_output", "Not selected"),
     unsafe_allow_html=True)
     if st.session_state.get("phrases_status", "").startswith("✅"):
         st.success(st.session_state["phrases_status"])
@@ -390,7 +416,7 @@ with st.expander("View Required Phrases", expanded=True):
 # 7. Sentiment Analysis
 st.subheader("😊 Sentiment Analysis")
 with st.expander("View Sentiment Analysis", expanded=True):
-    st.markdown(st.session_state.get("sentiment_output", "Not selected"),\
+    st.markdown(st.session_state.get("sentiment_output", "Not selected"),
     unsafe_allow_html=True)
     if st.session_state.get("sentiment_status", "").startswith("✅"):
         st.success(st.session_state["sentiment_status"])
@@ -400,7 +426,7 @@ with st.expander("View Sentiment Analysis", expanded=True):
 # 8. Call Category
 st.subheader("🏷️ Call Category")
 with st.expander("View Call Category", expanded=True):
-    st.markdown(st.session_state.get("category_output", "Not selected"),\
+    st.markdown(st.session_state.get("category_output", "Not selected"),
     unsafe_allow_html=True)
     if st.session_state.get("category_status", "").startswith("✅"):
         st.success(st.session_state["category_status"])
