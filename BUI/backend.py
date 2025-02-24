@@ -6,6 +6,7 @@ import shutil
 # from logger_config import get_logger
 # logger = get_logger()
 import sys
+from pathlib import Path
 
 from fastapi import FastAPI, File, Form, UploadFile
 from fastapi.responses import StreamingResponse
@@ -41,9 +42,8 @@ class TranscriptionRequest(BaseModel):
 @app.post("/process_call/")
 async def process_call(file: UploadFile = File(...), tasks: str = Form(...)):
     file_path = f"temp_{file.filename}"
-    with open(file_path, "wb") as buffer:
+    with Path.open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
-    # logger.info(f"File Uploaded Successfully: (fastapi)":{file.filename} )
 
     # Parse the selected tasks
     selected_tasks = json.loads(tasks)
@@ -60,39 +60,42 @@ async def process_call(file: UploadFile = File(...), tasks: str = Form(...)):
             profanity_results = None
             phrases_results = None
             sentiment_results = None
-            category = None
 
             if "Transcription" in selected_tasks:
                 try:
-                    transcription_input = transcription.TranscribeAudioSegmentInput(audio_file=file_path)
-                    full_transcription = transcription.transcribe_audio_segment(transcription_input)
+                    transcription_input = transcription.TranscribeAudioSegmentInput(
+                    audio_file=file_path)
+                    full_transcription = transcription.transcribe_audio_segment(
+                    transcription_input)
                     results["transcription"] = full_transcription.transcription
-                    print(f"Transcription: {results['transcription']}")  # Debugging
-                    yield f"data: {json.dumps({'step': 'transcription', 'result': results['transcription']})}\n\n"
+                    yield f"data: {json.dumps({'step': 'transcription',
+                    'result': results['transcription']})}\n\n"
                     await asyncio.sleep(1)
                 except Exception as e:
-                    print(f"Error during transcription: {e}")  # Debugging
-                    # logger.exception("Error during Transcription in fastapi part",e)
-                    yield f"data: {json.dumps({'step': 'error', 'result': f'Transcription failed: {e!s}'})}\n\n"
+                    yield f"data: {json.dumps({'step': 'error',
+                    'result': f'Transcription failed: {e!s}'})}\n\n"
 
             if "Speaker Diarization" in selected_tasks:
                 try:
-                    diarization_input = speaker_diarization.DiarizeInput(audio_file=file_path)
+                    diarization_input = speaker_diarization.DiarizeInput(
+                    audio_file=file_path)
                     diarization_results = speaker_diarization.diarize(diarization_input)
                     results["diarization"] = {
                         "speaker_segments": [
-                            {"start_time": segment.start_time, "end_time": segment.end_time, "speaker": segment.speaker}
+                            {"start_time": segment.start_time,
+                            "end_time": segment.end_time, "speaker": segment.speaker}
                             for segment in diarization_results.speaker_segments
                         ],
                         "speaking_ratio": diarization_results.speaking_ratio,
                         "interruptions": diarization_results.interruptions,
                         "time_to_first_token": diarization_results.time_to_first_token,
                     }
-                    yield f"data: {json.dumps({'step': 'diarization', 'result': results['diarization']})}\n\n"
+                    yield f"data: {json.dumps({'step': 'diarization',
+                    'result': results['diarization']})}\n\n"
                     await asyncio.sleep(1)
                 except Exception as e:
-                    # logger.exception("Error during speaker Diarization in fastapi part",e)
-                    yield f"data: {json.dumps({'step': 'error', 'result': f'Diarization failed: {e!s}'})}\n\n"
+                    yield f"data: {json.dumps({'step': 'error',
+                    'result': f'Diarization failed: {e!s}'})}\n\n"
 
             if "Speaking Speed" in selected_tasks and diarization_results:
                 speech_data_input = GetSpeakerSpeechDataInput(
@@ -100,92 +103,93 @@ async def process_call(file: UploadFile = File(...), tasks: str = Form(...)):
                     speaker_segments=diarization_results.speaker_segments,
                 )
                 speaker_speech_data = get_speaker_speech_data(speech_data_input)
-                speed_results = speaker_speed.calculate_speaking_speed(speaker_speech_data)
+                speed_results = speaker_speed.calculate_speaking_speed(
+                speaker_speech_data)
                 results["speaking_speed"] = speed_results.speaking_speeds
-                yield f"data: {json.dumps({'step': 'speaking_speed', 'result': results['speaking_speed']})}\n\n"
+                yield f"data: {json.dumps({'step': 'speaking_speed',
+                'result': results['speaking_speed']})}\n\n"
                 await asyncio.sleep(1)
 
             if "PII Check" in selected_tasks and full_transcription:
                 try:
-                    pii_data_input = pii_check.CheckPIIInput(transcribed_text=full_transcription.transcription)
-                    print(f"PII Input: {pii_data_input}")  # Debugging
+                    pii_data_input = pii_check.CheckPIIInput(
+                    transcribed_text=full_transcription.transcription)
                     pii_results = pii_check.check_pii(pii_data_input)
                     results["pii"] = {
                         "detected": pii_results.detected,
                         "masked_text": pii_results.masked_text,
                     }
-                    print(f"PII Results: {results['pii']}")  # Debugging
-                    yield f"data: {json.dumps({'step': 'pii', 'result': results['pii']})}\n\n"
+                    yield f"data: {json.dumps({'step': 'pii',
+                    'result': results['pii']})}\n\n"
                     await asyncio.sleep(1)
                 except Exception as e:
-                    print(f"Error during PII check: {e}")  # Debugging
-                    # logger.exception("Error during PII Check in fastapi part",e)
-                    yield f"data: {json.dumps({'step': 'error', 'result': f'PII check failed: {e!s}'})}\n\n"
+                    yield f"data: {json.dumps({'step': 'error',
+                    'result': f'PII check failed: {e!s}'})}\n\n"
 
             if "Profanity Check" in selected_tasks and full_transcription:
                 try:
-                    profanity_input_data = profanity_check.CheckProfanityInput(transcribed_text=full_transcription.transcription)
-                    print(f"Profanity Input: {profanity_input_data}")  # Debugging
-                    profanity_results = profanity_check.check_profanity(profanity_input_data)
+                    profanity_input_data = profanity_check.CheckProfanityInput(
+                    transcribed_text=full_transcription.transcription)
+                    profanity_results = profanity_check.check_profanity(
+                    profanity_input_data)
                     results["profanity"] = {
                         "detected": profanity_results.detected,
                         "censored_text": profanity_results.censored_text,
                     }
-                    print(f"Profanity Results: {results['profanity']}")  # Debugging
-                    yield f"data: {json.dumps({'step': 'profanity', 'result': results['profanity']})}\n\n"
+                    yield f"data: {json.dumps({'step': 'profanity',
+                    'result': results['profanity']})}\n\n"
                     await asyncio.sleep(1)
                 except Exception as e:
-                    print(f"Error during profanity check: {e}")  # Debugging
-                    # logger.exception("Error during Profanity in fastapi part",e)
-                    yield f"data: {json.dumps({'step': 'error', 'result': f'Profanity check failed: {e!s}'})}\n\n"
+
+                    yield f"data: {json.dumps({'step': 'error',
+                                'result': f'Profanity check failed: {e!s}'})}\n\n"
 
             if "Required Phrases" in selected_tasks and full_transcription:
                 try:
-                    phrases_input_data = CheckRequiredPhrasesInput(transcribed_text=full_transcription.transcription)
-                    print(f"Required Phrases Input: {phrases_input_data}")  # Debugging
+                    phrases_input_data = CheckRequiredPhrasesInput(
+                    transcribed_text=full_transcription.transcription)
                     phrases_results = check_required_phrases(phrases_input_data)
                     results["required_phrases"] = {
-                        "required_phrases_present": phrases_results.required_phrases_present,
+                        "required_phrases_present":
+                        phrases_results.required_phrases_present,
                         "present_phrases": phrases_results.present_phrases,
                     }
-                    print(f"Required Phrases Results: {results['required_phrases']}")  # Debugging
-                    yield f"data: {json.dumps({'step': 'required_phrases', 'result': results['required_phrases']})}\n\n"
+                    yield f"data: {json.dumps({'step':
+                    'required_phrases', 'result': results['required_phrases']})}\n\n"
                     await asyncio.sleep(1)
                 except Exception as e:
-                    print(f"Error during required phrases check: {e}")  # Debugging
-                    # logger.exception("Error during Required Phrases in fastapi part",e)
-                    yield f"data: {json.dumps({'step': 'error', 'result': f'Required phrases check failed: {e!s}'})}\n\n"
+                    yield f"data: {json.dumps({'step': 'error',
+                    'result': f'Required phrases check failed: {e!s}'})}\n\n"
 
             if "Sentiment Analysis" in selected_tasks and full_transcription:
                 try:
-                    sentiment_input_data = sentiment_analysis.AnalyseSentimentInput(transcribed_text=full_transcription.transcription)
-                    print(f"Sentiment Input: {sentiment_input_data}")  # Debugging
-                    sentiment_results = sentiment_analysis.analyse_sentiment(sentiment_input_data)
+                    sentiment_input_data = sentiment_analysis.AnalyseSentimentInput(
+                    transcribed_text=full_transcription.transcription)
+                    sentiment_results = sentiment_analysis.analyse_sentiment(
+                    sentiment_input_data)
                     results["sentiment"] = {
                         "polarity": sentiment_results.polarity,
                         "subjectivity": sentiment_results.subjectivity,
                         "overall_sentiment": sentiment_results.overall_sentiment,
                     }
-                    print(f"Sentiment Results: {results['sentiment']}")  # Debugging
-                    yield f"data: {json.dumps({'step': 'sentiment', 'result': results['sentiment']})}\n\n"
+                    yield f"data: {json.dumps({'step': 'sentiment',
+                    'result': results['sentiment']})}\n\n"
                     await asyncio.sleep(1)
                 except Exception as e:
-                    print(f"Error during sentiment analysis: {e}")  # Debugging
-                    # logger.exception("Error during Sentiment Analysis in fastapi part",e)
-                    yield f"data: {json.dumps({'step': 'error', 'result': f'Sentiment analysis failed: {e!s}'})}\n\n"
+                    yield f"data: {json.dumps({'step': 'error',
+                    'result': f'Sentiment analysis failed: {e!s}'})}\n\n"
 
             if "Call Category" in selected_tasks and full_transcription:
                 try:
-                    category_input_data = categorize_call.CategorizeInput(transcribed_text=full_transcription.transcription)
-                    print(f"Category Input: {category_input_data}")  # Debugging
+                    category_input_data = categorize_call.CategorizeInput(
+                    transcribed_text=full_transcription.transcription)
                     category_output = categorize_call.categorize(category_input_data)
-                    results["category"] = {"category": category_output.category}  # Extract attribute
-                    print(f"Category Results: {results['category']}")  # Debugging
-                    yield f"data: {json.dumps({'step': 'category', 'result': results['category']})}\n\n"
+                    results["category"] = {
+                    "category": category_output.category}  # Extract attribute
+                    yield f"data: {json.dumps(
+                    {'step': 'category', 'result': results['category']})}\n\n"
                     await asyncio.sleep(1)
                 except Exception as e:
-                    print(f"Error during call categorization: {e}")  # Debugging
-                    # logger.exception("Error during Call Category in fastapi part",e)
                     yield f"data: {json.dumps({'step': 'error',
                      'result': f'Call categorization failed: {e!s}'})}\n\n"
 
@@ -197,15 +201,19 @@ async def process_call(file: UploadFile = File(...), tasks: str = Form(...)):
             }
 
             # Extract speaker-specific data
-            speaker_1_data = speaker_speech_data.speaker_speech_data.get("SPEAKER_00", None)
+            speaker_1_data = speaker_speech_data.speaker_speech_data.get(
+            "SPEAKER_00", None)
 
-            speaker_2_data = speaker_speech_data.speaker_speech_data.get("SPEAKER_01", None)
+            speaker_2_data = speaker_speech_data.speaker_speech_data.get(
+            "SPEAKER_01", None)
 
             # Add Speech Data row
             summary_table["rows"].append([
                 "Speech Data",
-                f"Length: {speaker_1_data.length if speaker_1_data else 'N/A'}\nTime: {speaker_1_data.time_period if speaker_1_data else 'N/A'}",
-                f"Length: {speaker_2_data.length if speaker_2_data else 'N/A'}\nTime: {speaker_2_data.time_period if speaker_2_data else 'N/A'}",
+                f"Length: {speaker_1_data.length if speaker_1_data else 'N/A'}\nTime:{
+                speaker_1_data.time_period if speaker_1_data else 'N/A'}",
+                f"Length: {speaker_2_data.length if speaker_2_data else 'N/A'}\nTime:{
+                speaker_2_data.time_period if speaker_2_data else 'N/A'}",
             ])
 
             # Add Speaking Speed row
@@ -216,8 +224,12 @@ async def process_call(file: UploadFile = File(...), tasks: str = Form(...)):
             ])
 
             # Add PII Check row
-            pii_speaker_1 = pii_check.check_pii(pii_check.CheckPIIInput(transcribed_text=speaker_1_data.speech if speaker_1_data else "")) if speaker_1_data else None
-            pii_speaker_2 = pii_check.check_pii(pii_check.CheckPIIInput(transcribed_text=speaker_2_data.speech if speaker_2_data else "")) if speaker_2_data else None
+            pii_speaker_1 = pii_check.check_pii(pii_check.CheckPIIInput(
+                transcribed_text=speaker_1_data.speech
+                if speaker_1_data else "")) if speaker_1_data else None
+            pii_speaker_2 = pii_check.check_pii(pii_check.CheckPIIInput(
+                transcribed_text=speaker_2_data.speech
+                if speaker_2_data else "")) if speaker_2_data else None
             summary_table["rows"].append([
                 "PII Check",
                 f"Detected: {pii_speaker_1.detected if pii_speaker_1 else 'N/A'}",
@@ -225,19 +237,41 @@ async def process_call(file: UploadFile = File(...), tasks: str = Form(...)):
             ])
 
             # Add Profanity Check row
-            profanity_speaker_1 = profanity_check.check_profanity(profanity_check.CheckProfanityInput(transcribed_text=speaker_1_data.speech if speaker_1_data else "")) if speaker_1_data else None
-            profanity_speaker_2 = profanity_check.check_profanity(profanity_check.CheckProfanityInput(transcribed_text=speaker_2_data.speech if speaker_2_data else "")) if speaker_2_data else None
+            profanity_speaker_1 = profanity_check.check_profanity(
+                profanity_check.CheckProfanityInput(
+                transcribed_text=speaker_1_data.speech
+                if speaker_1_data else "")) if speaker_1_data else None
+            profanity_speaker_2 = profanity_check.check_profanity(
+                profanity_check.CheckProfanityInput(
+                transcribed_text=speaker_2_data.speech
+                if speaker_2_data else "")) if speaker_2_data else None
             summary_table["rows"].append([
                 "Profanity Check",
-                f"Detected: {profanity_speaker_1.detected if profanity_speaker_1 else 'N/A'}",
-                f"Detected: {profanity_speaker_2.detected if profanity_speaker_2 else 'N/A'}",
+                f"Detected: {profanity_speaker_1.detected
+                            if profanity_speaker_1 else 'N/A'}",
+                f"Detected: {profanity_speaker_2.detected
+                            if profanity_speaker_2 else 'N/A'}",
             ])
 
             # Add Required Phrases row
-            phrases_speaker_1 = check_required_phrases(CheckRequiredPhrasesInput(transcribed_text=speaker_1_data.speech if speaker_1_data else "")) if speaker_1_data else None
-            phrases_speaker_2 = check_required_phrases(CheckRequiredPhrasesInput(transcribed_text=speaker_2_data.speech if speaker_2_data else "")) if speaker_2_data else None
-            required_phrases_speaker_1 = f"Present: {phrases_speaker_1.required_phrases_present}\nPhrases: {phrases_speaker_1.present_phrases if phrases_speaker_1 and phrases_speaker_1.required_phrases_present else 'N/A'}" if phrases_speaker_1 else "N/A"
-            required_phrases_speaker_2 = f"Present: {phrases_speaker_2.required_phrases_present}\nPhrases: {phrases_speaker_2.present_phrases if phrases_speaker_2 and phrases_speaker_2.required_phrases_present else 'N/A'}" if phrases_speaker_2 else "N/A"
+            phrases_speaker_1 = check_required_phrases(
+            CheckRequiredPhrasesInput(
+            transcribed_text=speaker_1_data.speech
+            if speaker_1_data else ""))if speaker_1_data else None
+            phrases_speaker_2 = check_required_phrases(
+            CheckRequiredPhrasesInput(
+            transcribed_text=speaker_2_data.speech
+            if speaker_2_data else "")) if speaker_2_data else None
+            required_phrases_speaker_1 = f"Present: {
+            phrases_speaker_1.required_phrases_present}\nPhrases:{
+            phrases_speaker_1.present_phrases
+            if phrases_speaker_1 and phrases_speaker_1.required_phrases_present
+            else 'N/A'}" if phrases_speaker_1 else "N/A"
+            required_phrases_speaker_2 = f"Present: {
+            phrases_speaker_2.required_phrases_present}\nPhrases:{
+            phrases_speaker_2.present_phrases
+            if phrases_speaker_2 and phrases_speaker_2.required_phrases_present
+            else 'N/A'}" if phrases_speaker_2 else "N/A"
             summary_table["rows"].append([
                 "Required Phrases",
                 required_phrases_speaker_1,
@@ -245,26 +279,43 @@ async def process_call(file: UploadFile = File(...), tasks: str = Form(...)):
             ])
 
             # Add Sentiment Analysis row
-            sentiment_speaker_1 = sentiment_analysis.analyse_sentiment(sentiment_analysis.AnalyseSentimentInput(transcribed_text=speaker_1_data.speech if speaker_1_data else "")) if speaker_1_data else None
-            sentiment_speaker_2 = sentiment_analysis.analyse_sentiment(sentiment_analysis.AnalyseSentimentInput(transcribed_text=speaker_2_data.speech if speaker_2_data else "")) if speaker_2_data else None
+            sentiment_speaker_1 = sentiment_analysis.analyse_sentiment(
+            sentiment_analysis.AnalyseSentimentInput(
+            transcribed_text=speaker_1_data.speech
+            if speaker_1_data else "")) if speaker_1_data else None
+            sentiment_speaker_2 = sentiment_analysis.analyse_sentiment(
+            sentiment_analysis.AnalyseSentimentInput(
+            transcribed_text=speaker_2_data.speech
+            if speaker_2_data else "")) if speaker_2_data else None
             summary_table["rows"].append([
                 "Sentiment Analysis",
-                f"Polarity: {sentiment_speaker_1.polarity if sentiment_speaker_1 else 'N/A'}\nSubjectivity: {sentiment_speaker_1.subjectivity if sentiment_speaker_1 else 'N/A'}\nOverall: {sentiment_speaker_1.overall_sentiment if sentiment_speaker_1 else 'N/A'}",
-                f"Polarity: {sentiment_speaker_2.polarity if sentiment_speaker_2 else 'N/A'}\nSubjectivity: {sentiment_speaker_2.subjectivity if sentiment_speaker_2 else 'N/A'}\nOverall: {sentiment_speaker_2.overall_sentiment if sentiment_speaker_2 else 'N/A'}",
+                f"Polarity: {sentiment_speaker_1.polarity
+                             if sentiment_speaker_1 else 'N/A'}\nSubjectivity:{
+                sentiment_speaker_1.subjectivity
+                if sentiment_speaker_1 else 'N/A'}\nOverall:{
+                sentiment_speaker_1.overall_sentiment
+                if sentiment_speaker_1 else 'N/A'}",
+                f"Polarity: {sentiment_speaker_2.polarity
+                if sentiment_speaker_2 else 'N/A'}\nSubjectivity:{
+                sentiment_speaker_2.subjectivity
+                if sentiment_speaker_2 else 'N/A'}\nOverall:{
+                sentiment_speaker_2.overall_sentiment
+                if sentiment_speaker_2 else 'N/A'}",
             ])
 
             # Yield the summary table
-            yield f"data: {json.dumps({'step': 'summary', 'result': summary_table})}\n\n"
+            yield f"data: {json.dumps({'step': 'summary', 'result': summary_table})}\n"
 
             # Cleanup
-            os.remove(file_path)
-            yield f"data: {json.dumps({'step': 'complete', 'result': 'Call processing completed.'})}\n\n"
+            Path.unlink(file_path)
+            yield f"data: {json.dumps({'step': 'complete',
+                                       'result': 'Call processing completed.'})}\n\n"
 
         except Exception as e:
-            # logger.exception("Error during process_call in fastapi part",e)
             yield f"data: {json.dumps({'step': 'error', 'result': str(e)})}\n\n"
 
-    return StreamingResponse(process_call_step_by_step(file_path, selected_tasks), media_type="text/event-stream")
+    return StreamingResponse(process_call_step_by_step(
+    file_path, selected_tasks), media_type="text/event-stream")
 
 if __name__ == "__main__":
     import uvicorn

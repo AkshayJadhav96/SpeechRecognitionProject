@@ -14,16 +14,16 @@ The following diagram illustrates the flow of data from audio input to the final
 
 ```mermaid
 graph TD;
-    A[Audio Input] -->|Speaker Diarization| B[Speaker Separation];
-    B -->|Speech-to-Text| C[Transcription];
+    A[Audio Input] -->|Speaker Diarization| B[Speaker Segments];
+    A -->|Speech-to-Text| C[Transcription];
 
-    C -->|Compliance & Prohibited Phrase Check| D[Compliance Check];
-    C -->|PII Masking & Profanity Filtering| E[Secure Processing];
-    C -->|Sentiment & Emotion Analysis| F[Sentiment Analysis];
-    C -->|Speaking Speed & Interruptions| G[Speech Analytics];
+    B -->|Speaker-Specific Analysis| D[Speech Analytics];
+    C -->|Compliance & Prohibited Phrase Check| E[Compliance Check];
+    C -->|PII Masking & Profanity Filtering| F[Secure Processing];
+    C -->|Sentiment & Emotion Analysis| G[Sentiment Analysis];
 
-    D -->|Compliance Report| H[Final Report];
-    E -->|Masked & Processed Text| H;
-    F -->|Emotion Insights| H;
-    G -->|Speaker Insights| H;
+    D -->|Speaker Insights| H[Final Report];
+    E -->|Compliance Report| H;
+    F -->|Masked & Processed Text| H;
+    G -->|Emotion Insights| H;
 ```
