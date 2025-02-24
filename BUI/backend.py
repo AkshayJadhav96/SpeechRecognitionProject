@@ -193,13 +193,9 @@ async def process_call(file: UploadFile = File(...), tasks: str = Form(...)):
             }
 
             # Extract speaker-specific data
-            speaker_1_data = speaker_speech_data.
-            speaker_speech_data.
-            get("SPEAKER_00", None)
+            speaker_1_data = speaker_speech_data.speaker_speech_data.get("SPEAKER_00", None)
 
-            speaker_2_data = speaker_speech_data.
-            speaker_speech_data.
-            get("SPEAKER_01", None)
+            speaker_2_data = speaker_speech_data.speaker_speech_data.get("SPEAKER_01", None)
 
             # Add Speech Data row
             summary_table["rows"].append([

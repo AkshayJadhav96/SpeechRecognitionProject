@@ -47,29 +47,8 @@ if "transcription_output" not in st.session_state:
         "process_status": "❌ Not selected",
     })
 
-# Function to process the audio file and update the UI progressively
-def process_audio(audio_file, selected_tasks):
-    """Process an audio file by sending it to the backend and updating the UI.
-
-    Args:
-        audio_file (str or Path): Path to the audio file to be processed.
-        selected_tasks (list): List of tasks to be performed on the audio.
-
-    Returns:
-        None
-
-    """
-    # Send the audio file to the backend for processing
-    files = {"file": Path(audio_file.open("rb"))}
-    response = requests.post(
-        f"{BACKEND_URL}/process_call/",
-        files=files,
-        data={"tasks": json.dumps(selected_tasks)},
-        stream=True,
-        timeout=10,
-    )
-
-    # Initialize results and outputs
+def initialize_results(selected_tasks):
+    """Initialize the results dictionary and set UI status for selected tasks."""
     results = {
         "transcription": "Not selected",
         "diarization": "Not selected",
@@ -83,32 +62,159 @@ def process_audio(audio_file, selected_tasks):
         "message": "Not selected",
     }
 
-    # Set initial status for selected tasks to "Processing"
+    status_mapping = {
+        "Transcription": "transcription_status",
+        "Speaker Diarization": "diarization_status",
+        "Speaking Speed": "speaking_speed_status",
+        "PII Check": "pii_status",
+        "Profanity Check": "profanity_status",
+        "Required Phrases": "phrases_status",
+        "Sentiment Analysis": "sentiment_status",
+        "Call Category": "category_status",
+    }
+
     for task in selected_tasks:
-        if task == "Transcription":
-            results["transcription"] = "Processing..."
-            st.session_state.transcription_status = "⏳ Processing"
-        elif task == "Speaker Diarization":
-            results["diarization"] = "Processing..."
-            st.session_state.diarization_status = "⏳ Processing"
-        elif task == "Speaking Speed":
-            results["speaking_speed"] = "Processing..."
-            st.session_state.speaking_speed_status = "⏳ Processing"
-        elif task == "PII Check":
-            results["pii"] = "Processing..."
-            st.session_state.pii_status = "⏳ Processing"
-        elif task == "Profanity Check":
-            results["profanity"] = "Processing..."
-            st.session_state.profanity_status = "⏳ Processing"
-        elif task == "Required Phrases":
-            results["required_phrases"] = "Processing..."
-            st.session_state.phrases_status = "⏳ Processing"
-        elif task == "Sentiment Analysis":
-            results["sentiment"] = "Processing..."
-            st.session_state.sentiment_status = "⏳ Processing"
-        elif task == "Call Category":
-            results["category"] = "Processing..."
-            st.session_state.category_status = "⏳ Processing"
+        key = status_mapping.get(task)
+        if key:
+            results[key] = "Processing..."
+            setattr(st.session_state, key, "⏳ Processing")
+
+    return results
+
+def prepare_audio_file(audio_file):
+    """Prepare the audio file for uploading."""
+    if isinstance(audio_file, str):  # If it's a file path, open it
+        audio_path = Path(audio_file)
+        return {"file": open(audio_path, "rb")}  # Keep the file open
+
+    return {"file": audio_file} 
+
+
+def send_audio_to_backend(files, selected_tasks):
+    """Send the audio file and tasks to the backend for processing."""
+    return requests.post(
+        f"{BACKEND_URL}/process_call/",
+        files=files,
+        data={"tasks": json.dumps(selected_tasks)},
+        timeout=30,  # Added timeout to fix S113
+        stream=True,
+    )
+
+def take(result,results,step):
+    """Update the results dictionary and output variables"""
+    if step == "transcription":
+        results["transcription"] = result
+        st.session_state.transcription_output = (
+            f"<span style='color:green;'>**Transcription:**</span>"
+            f"{result}"
+        )
+        st.session_state.transcription_status = "✅ Completed"
+    elif step == "diarization":
+        results["diarization"] = result
+        st.session_state.diarization_output = {
+            "speaker_segments": result["speaker_segments"],
+            "speaking_ratio": result["speaking_ratio"],
+            "interruptions": result["interruptions"],
+            "time_to_first_token":
+                result["time_to_first_token"],
+        }
+        st.session_state.diarization_status = "✅ Completed"
+    elif step == "speaking_speed":
+        results["speaking_speed"] = result
+        st.session_state.speaking_speed_output = (
+            "<span style='color:blue;'>**Speaking Speed (WPM):**</span>"
+        )
+        st.session_state.speaking_speed_output += "\n".join(
+            [
+                f"- {speaker}:"
+                f"<span style='color:orange;'>{speed:.2f} wpm</span>"
+                for speaker, speed in result.items()
+            ],
+        )
+        st.session_state.speaking_speed_status = "✅ Completed"
+    elif step == "pii":
+        results["pii"] = result
+        st.session_state.pii_output = (
+            f"<span style='color:red;'>**PII Detected:"
+            f"**</span> {result['detected']}"
+            f"<span style='color:green;'>**Masked Text:**"
+            f"</span>\n{result['masked_text']}"
+        )
+        st.session_state.pii_status = "✅ Completed"
+    elif step == "profanity":
+        results["profanity"] = result
+        st.session_state.profanity_output = (
+            f"<span style='color:red;'>**Profanity Detected:"
+            f"**</span>"
+            f"{result['detected']}"
+            f"<span style='color:green;'>**Censored Text:**</span>"
+            f"{result['censored_text']}"
+        )
+        st.session_state.profanity_status = "✅ Completed"
+    elif step == "required_phrases":
+        results["required_phrases"] = result
+        st.session_state.phrases_output = (
+            f"<span style='color:purple;'>**Required Phrases Present:"
+            f"**</span>"
+            f"{result['required_phrases_present']}"
+            f"<span style='color:green;'>**Phrases Found:**</span>"
+        )
+        st.session_state.phrases_output += "\n".join(
+            [
+                f"- {phrase}"
+                for phrase in result["present_phrases"]],
+        )
+        st.session_state.phrases_status = "✅ Completed"
+    elif step == "sentiment":
+        results["sentiment"] = result
+        st.session_state.sentiment_output = (
+            f"<span style='color:blue;'>Polarity:</span>"
+            f"<span style='color:green;'>"
+            f"{result['polarity']:.2f}</span><br>"
+            f"<span style='color:blue;'>Subjectivity:</span>"
+            f"<span style='color:green;'>"
+            f"{result['subjectivity']:.2f}</span><br>"
+            f"<span style='color:blue;'>Overall Sentiment:</span>"
+            f"<span style='color:green;'>"
+            f"{result['overall_sentiment']}</span>"
+        )
+        st.session_state.sentiment_status = "✅ Completed"
+    elif step == "category":
+        results["category"] = result
+        st.session_state.category_output =(
+            f"<span style='color:purple;'>**Call Category:**</span>"
+            f"{result['category']}"
+        )
+        st.session_state.category_status = "✅ Completed"
+    elif step == "summary":
+        results["summary"] = result
+        st.session_state.summary_output = result  # Store summary data
+        st.session_state.summary_status = "✅ Completed"
+    elif step == "complete":
+        results["message"] = result
+        st.session_state.process_output =(
+        f"<span style='color:green;'>**Call Processing Status:**</span>"
+        f"{result}"
+        )
+        st.session_state.process_status = "✅ Completed"
+
+# Function to process the audio file and update the UI progressively
+def process_audio(audio_file, selected_tasks):
+    """Process an audio file by sending it to the backend and updating the UI.
+
+    Args:
+        audio_file (str or Path): Path to the audio file to be processed.
+        selected_tasks (list): List of tasks to be performed on the audio.
+
+    Returns:
+        None
+
+    """
+    # Send the audio file to the backend for processing
+    files = prepare_audio_file(audio_file)
+    response = send_audio_to_backend(files, selected_tasks)
+
+    results = initialize_results(selected_tasks)
 
     # Process the streaming response
     for line in response.iter_lines():
@@ -121,104 +227,7 @@ def process_audio(audio_file, selected_tasks):
                     data = json.loads(json_data)
                     step = data["step"]
                     result = data["result"]
-
-                    # Update the results dictionary and output variables
-                    if step == "transcription":
-                        results["transcription"] = result
-                        st.session_state.transcription_output = (
-                            f"<span style='color:green;'>**Transcription:**</span>"
-                            f"{result}"
-                        )
-                        st.session_state.transcription_status = "✅ Completed"
-                    elif step == "diarization":
-                        results["diarization"] = result
-                        st.session_state.diarization_output = {
-                            "speaker_segments": result["speaker_segments"],
-                            "speaking_ratio": result["speaking_ratio"],
-                            "interruptions": result["interruptions"],
-                            "time_to_first_token":
-                                result["time_to_first_token"],
-                        }
-                        st.session_state.diarization_status = "✅ Completed"
-                    elif step == "speaking_speed":
-                        results["speaking_speed"] = result
-                        st.session_state.speaking_speed_output = (
-                            "<span style='color:blue;'>**Speaking Speed (WPM):**</span>"
-                        )
-                        st.session_state.speaking_speed_output += "\n".join(
-                            [
-                                f"- {speaker}:"
-                                f"<span style='color:orange;'>{speed:.2f} wpm</span>"
-                                for speaker, speed in result.items()
-                            ],
-                        )
-                        st.session_state.speaking_speed_status = "✅ Completed"
-                    elif step == "pii":
-                        results["pii"] = result
-                        st.session_state.pii_output = (
-                            f"<span style='color:red;'>**PII Detected:"
-                            f"**</span> {result['detected']}"
-                            f"<span style='color:green;'>**Masked Text:**"
-                            f"</span>\n{result['masked_text']}"
-                        )
-                        st.session_state.pii_status = "✅ Completed"
-                    elif step == "profanity":
-                        results["profanity"] = result
-                        st.session_state.profanity_output = (
-                            f"<span style='color:red;'>**Profanity Detected:"
-                            f"**</span>"
-                            f"{result['detected']}"
-                            f"<span style='color:green;'>**Censored Text:**</span>"
-                            f"{result['censored_text']}"
-                        )
-                        st.session_state.profanity_status = "✅ Completed"
-                    elif step == "required_phrases":
-                        results["required_phrases"] = result
-                        st.session_state.phrases_output = (
-                            f"<span style='color:purple;'>**Required Phrases Present:"
-                            f"**</span>"
-                            f"{result['required_phrases_present']}"
-                            f"<span style='color:green;'>**Phrases Found:**</span>"
-                        )
-                        st.session_state.phrases_output += "\n".join(
-                            [
-                                f"- {phrase}"
-                                for phrase in result["present_phrases"]],
-                        )
-                        st.session_state.phrases_status = "✅ Completed"
-                    elif step == "sentiment":
-                        results["sentiment"] = result
-                        st.session_state.sentiment_output = (
-                            f"<span style='color:blue;'>Polarity:</span>"
-                            f"<span style='color:green;'>"
-                            f"{result['polarity']:.2f}</span><br>"
-                            f"<span style='color:blue;'>Subjectivity:</span>"
-                            f"<span style='color:green;'>"
-                            f"{result['subjectivity']:.2f}</span><br>"
-                            f"<span style='color:blue;'>Overall Sentiment:</span>"
-                            f"<span style='color:green;'>"
-                            f"{result['overall_sentiment']}</span>"
-                        )
-                        st.session_state.sentiment_status = "✅ Completed"
-                    elif step == "category":
-                        results["category"] = result
-                        st.session_state.category_output =(
-                            f"<span style='color:purple;'>**Call Category:**</span>"
-                            f"{result['category']}"
-                        )
-                        st.session_state.category_status = "✅ Completed"
-                    elif step == "summary":
-                        results["summary"] = result
-                        st.session_state.summary_output = result  # Store summary data
-                        st.session_state.summary_status = "✅ Completed"
-                    elif step == "complete":
-                        results["message"] = result
-                        st.session_state.process_output =(
-                        f"<span style='color:green;'>**Call Processing Status:**</span>"
-                        f"{result}"
-                        )
-                        st.session_state.process_status = "✅ Completed"
-
+                    take(result,results,step)    #ye wala maine upper likha hai , ek bar uv run ruff check krna,
                 except json.JSONDecodeError as e:
                     return e
     return None
