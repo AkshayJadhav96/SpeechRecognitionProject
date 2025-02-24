@@ -11,12 +11,10 @@ Functions:
       identifies speakers, and computes speaker-related metrics.
 """
 
-import os 
-from dotenv import load_dotenv
-
-load_dotenv()
+import os
 
 import torch
+from dotenv import load_dotenv
 from pyannote.audio import Pipeline
 
 from call_processor_modules.pydantic_models import (
@@ -26,6 +24,7 @@ from call_processor_modules.pydantic_models import (
 )
 from logger_config import get_logger
 
+load_dotenv()
 logger = get_logger()
 
 def raise_error(message: str) -> None:
@@ -57,13 +56,13 @@ def diarize(data: DiarizeInput) -> DiarizeOutput:
         logger.info("Starting speaker diarization for file: {audio_file}")
 
         token = os.getenv("HUGGING_FACE_TOKEN")
-        # if not token:
-        #     error_text = "Hugging Face token not found in environment variables."
-        #     raise_error(error_text)
+        if not token:
+            error_text = "Hugging Face token not found in environment variables."
+            raise_error(error_text)
 
         pipeline = Pipeline.from_pretrained("pyannote/speaker-diarization")
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        pipeline.to(device) 
+        pipeline.to(device)
         logger.info("Pipeline loaded and moved to {device}")
 
         diarization = pipeline(audio_file)
