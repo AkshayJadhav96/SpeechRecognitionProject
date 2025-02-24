@@ -86,8 +86,7 @@ def prepare_audio_file(audio_file):
     if isinstance(audio_file, str):  # If it's a file path, open it
         audio_path = Path(audio_file)
         return {"file": open(audio_path, "rb")}  # Keep the file open
-
-    return {"file": audio_file} 
+    return {"file": audio_file}
 
 
 def send_audio_to_backend(files, selected_tasks):
@@ -100,103 +99,146 @@ def send_audio_to_backend(files, selected_tasks):
         stream=True,
     )
 
-def take(result,results,step):
-    """Update the results dictionary and output variables"""
-    if step == "transcription":
-        results["transcription"] = result
-        st.session_state.transcription_output = (
-            f"<span style='color:green;'>**Transcription:**</span>"
-            f"{result}"
-        )
-        st.session_state.transcription_status = "✅ Completed"
-    elif step == "diarization":
-        results["diarization"] = result
-        st.session_state.diarization_output = {
-            "speaker_segments": result["speaker_segments"],
-            "speaking_ratio": result["speaking_ratio"],
-            "interruptions": result["interruptions"],
-            "time_to_first_token":
-                result["time_to_first_token"],
-        }
-        st.session_state.diarization_status = "✅ Completed"
-    elif step == "speaking_speed":
-        results["speaking_speed"] = result
-        st.session_state.speaking_speed_output = (
-            "<span style='color:blue;'>**Speaking Speed (WPM):**</span>"
-        )
-        st.session_state.speaking_speed_output += "\n".join(
-            [
-                f"- {speaker}:"
-                f"<span style='color:orange;'>{speed:.2f} wpm</span>"
-                for speaker, speed in result.items()
-            ],
-        )
-        st.session_state.speaking_speed_status = "✅ Completed"
-    elif step == "pii":
-        results["pii"] = result
-        st.session_state.pii_output = (
-            f"<span style='color:red;'>**PII Detected:"
-            f"**</span> {result['detected']}"
-            f"<span style='color:green;'>**Masked Text:**"
-            f"</span>\n{result['masked_text']}"
-        )
-        st.session_state.pii_status = "✅ Completed"
-    elif step == "profanity":
-        results["profanity"] = result
-        st.session_state.profanity_output = (
-            f"<span style='color:red;'>**Profanity Detected:"
-            f"**</span>"
-            f"{result['detected']}"
-            f"<span style='color:green;'>**Censored Text:**</span>"
-            f"{result['censored_text']}"
-        )
-        st.session_state.profanity_status = "✅ Completed"
-    elif step == "required_phrases":
-        results["required_phrases"] = result
-        st.session_state.phrases_output = (
-            f"<span style='color:purple;'>**Required Phrases Present:"
-            f"**</span>"
-            f"{result['required_phrases_present']}"
-            f"<span style='color:green;'>**Phrases Found:**</span>"
-        )
-        st.session_state.phrases_output += "\n".join(
-            [
-                f"- {phrase}"
-                for phrase in result["present_phrases"]],
-        )
-        st.session_state.phrases_status = "✅ Completed"
-    elif step == "sentiment":
-        results["sentiment"] = result
-        st.session_state.sentiment_output = (
-            f"<span style='color:blue;'>Polarity:</span>"
-            f"<span style='color:green;'>"
-            f"{result['polarity']:.2f}</span><br>"
-            f"<span style='color:blue;'>Subjectivity:</span>"
-            f"<span style='color:green;'>"
-            f"{result['subjectivity']:.2f}</span><br>"
-            f"<span style='color:blue;'>Overall Sentiment:</span>"
-            f"<span style='color:green;'>"
-            f"{result['overall_sentiment']}</span>"
-        )
-        st.session_state.sentiment_status = "✅ Completed"
-    elif step == "category":
-        results["category"] = result
-        st.session_state.category_output =(
-            f"<span style='color:purple;'>**Call Category:**</span>"
-            f"{result['category']}"
-        )
-        st.session_state.category_status = "✅ Completed"
-    elif step == "summary":
-        results["summary"] = result
-        st.session_state.summary_output = result  # Store summary data
-        st.session_state.summary_status = "✅ Completed"
-    elif step == "complete":
-        results["message"] = result
-        st.session_state.process_output =(
-        f"<span style='color:green;'>**Call Processing Status:**</span>"
+def update_transcription(result, results):
+    """Update transcription-related outputs."""
+    results["transcription"] = result
+    st.session_state.transcription_output = (
+        f"<span style='color:green;'>*Transcription:*</span>"
         f"{result}"
-        )
-        st.session_state.process_status = "✅ Completed"
+    )
+    st.session_state.transcription_status = "✅ Completed"
+
+
+def update_diarization(result, results):
+    """Update diarization-related outputs."""
+    results["diarization"] = result
+    st.session_state.diarization_output = {
+        "speaker_segments": result["speaker_segments"],
+        "speaking_ratio": result["speaking_ratio"],
+        "interruptions": result["interruptions"],
+        "time_to_first_token": result["time_to_first_token"],
+    }
+    st.session_state.diarization_status = "✅ Completed"
+
+
+def update_speaking_speed(result, results):
+    """Update speaking speed-related outputs."""
+    results["speaking_speed"] = result
+    st.session_state.speaking_speed_output = (
+        "<span style='color:blue;'>*Speaking Speed (WPM):*</span>"
+    )
+    st.session_state.speaking_speed_output += "\n".join(
+        [
+            f"- {speaker}:"
+            f"<span style='color:orange;'>{speed:.2f} wpm</span>"
+            for speaker, speed in result.items()
+        ],
+    )
+    st.session_state.speaking_speed_status = "✅ Completed"
+
+
+def update_pii(result, results):
+    """Update PII-related outputs."""
+    results["pii"] = result
+    st.session_state.pii_output = (
+        f"<span style='color:red;'>*PII Detected:*</span> "
+        f"{result['detected']}"
+        f"<span style='color:green;'>*Masked Text:*</span>\n"
+        f"{result['masked_text']}"
+    )
+    st.session_state.pii_status = "✅ Completed"
+
+
+def update_profanity(result, results):
+    """Update profanity-related outputs."""
+    results["profanity"] = result
+    st.session_state.profanity_output = (
+        f"<span style='color:red;'>*Profanity Detected:*</span>"
+        f"{result['detected']}"
+        f"<span style='color:green;'>*Censored Text:*</span>"
+        f"{result['censored_text']}"
+    )
+    st.session_state.profanity_status = "✅ Completed"
+
+
+def update_required_phrases(result, results):
+    """Update required phrases-related outputs."""
+    results["required_phrases"] = result
+    st.session_state.phrases_output = (
+        f"<span style='color:purple;'>*Required Phrases Present:*</span>"
+        f"{result['required_phrases_present']}"
+        f"<span style='color:green;'>*Phrases Found:*</span>"
+    )
+    st.session_state.phrases_output += "\n".join(
+        [f"- {phrase}" for phrase in result["present_phrases"]],
+    )
+    st.session_state.phrases_status = "✅ Completed"
+
+
+def update_sentiment(result, results):
+    """Update sentiment-related outputs."""
+    results["sentiment"] = result
+    st.session_state.sentiment_output = (
+        f"<span style='color:blue;'>Polarity:</span>"
+        f"<span style='color:green;'>{result['polarity']:.2f}</span><br>"
+        f"<span style='color:blue;'>Subjectivity:</span>"
+        f"<span style='color:green;'>{result['subjectivity']:.2f}</span><br>"
+        f"<span style='color:blue;'>Overall Sentiment:</span>"
+        f"<span style='color:green;'>{result['overall_sentiment']}</span>"
+    )
+    st.session_state.sentiment_status = "✅ Completed"
+
+
+def update_category(result, results):
+    """Update category-related outputs."""
+    results["category"] = result
+    st.session_state.category_output = (
+        f"<span style='color:purple;'>*Call Category:*</span>"
+        f"{result['category']}"
+    )
+    st.session_state.category_status = "✅ Completed"
+
+
+def update_summary(result, results):
+    """Update summary-related outputs."""
+    results["summary"] = result
+    st.session_state.summary_output = result  # Store summary data
+    st.session_state.summary_status = "✅ Completed"
+
+
+def update_complete(result, results):
+    """Update process completion-related outputs."""
+    results["message"] = result
+    st.session_state.process_output = (
+        f"<span style='color:green;'>*Call Processing Status:*</span>"
+        f"{result}"
+    )
+    st.session_state.process_status = "✅ Completed"
+
+
+# Dictionary-based dispatch
+STEP_HANDLERS = {
+    "transcription": update_transcription,
+    "diarization": update_diarization,
+    "speaking_speed": update_speaking_speed,
+    "pii": update_pii,
+    "profanity": update_profanity,
+    "required_phrases": update_required_phrases,
+    "sentiment": update_sentiment,
+    "category": update_category,
+    "summary": update_summary,
+    "complete": update_complete,
+}
+
+
+def take(result, results, step):
+    """Update the results dictionary and output variables based on the step."""
+    handler = STEP_HANDLERS.get(step)
+    if handler:
+        handler(result, results)
+    else:
+        error_message = f"Unknown step: {step}"
+        raise ValueError(error_message)
 
 # Function to process the audio file and update the UI progressively
 def process_audio(audio_file, selected_tasks):
@@ -227,7 +269,7 @@ def process_audio(audio_file, selected_tasks):
                     data = json.loads(json_data)
                     step = data["step"]
                     result = data["result"]
-                    take(result,results,step)    #ye wala maine upper likha hai , ek bar uv run ruff check krna,
+                    take(result,results,step)
                 except json.JSONDecodeError as e:
                     return e
     return None
